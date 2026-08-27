@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useReducer, useRef } from 'react';
 
 import { CUES, SHOW_META } from './data.js';
+import { compareRetimeStrategies, createRunSnapshot, previewSegmentRetime } from './schedule.js';
 import {
   DEPARTMENTS,
   appReducer,
@@ -9,6 +10,7 @@ import {
   getSequenceContext,
   nextVisibleCueId,
 } from './state.js';
+import { registerLinecallWebMCP } from './webmcp.js';
 
 const DEPARTMENT_LABELS = {
   stage: 'Stage',
@@ -70,6 +72,7 @@ function CueRow({
         <span className="cue-copy">
           <span className="cue-label">{cue.label}</span>
           <span className="cue-instruction">{cue.instruction}</span>
+          {cue.locked ? <span className="cue-lock-note">Human lock</span> : null}
         </span>
         <span className="cue-department" data-department={cue.department}>
           {DEPARTMENT_LABELS[cue.department]}
@@ -88,7 +91,7 @@ function CueRow({
   );
 }
 
-function CueInspector({ cue, readiness, onReadiness, onClose, headingRef, unavailable = false }) {
+function CueInspector({ cue, readiness, onReadiness, onToggleLock, onClose, headingRef, unavailable = false }) {
   if (unavailable) {
     return (
       <aside className="inspector inspector--empty" aria-label="Cue detail unavailable">
@@ -148,33 +151,348 @@ function CueInspector({ cue, readiness, onReadiness, onClose, headingRef, unavai
         </div>
       </fieldset>
 
+      <div className="human-boundary">
+        <div>
+          <p className="eyebrow">Human authority</p>
+          <strong>{cue.locked ? 'Agent timing changes blocked' : 'Agent timing changes allowed after approval'}</strong>
+        </div>
+        <button
+          type="button"
+          className={cue.locked ? 'lock-control lock-control--active' : 'lock-control'}
+          onClick={onToggleLock}
+        >
+          {cue.locked ? 'Unlock cue' : 'Lock cue'}
+        </button>
+      </div>
+
       <dl className="cue-facts">
         <div>
           <dt>Sequence state</dt>
           <dd>{cue.runState === 'current' ? 'Current cue' : cue.runState === 'complete' ? 'Completed' : 'Upcoming'}</dd>
         </div>
         <div>
-          <dt>Fixture source</dt>
-          <dd>Local rehearsal data</dd>
+          <dt>Segment</dt>
+          <dd>{cue.segment}</dd>
         </div>
       </dl>
     </aside>
   );
 }
 
+function AgentCollaborationPanel({
+  webmcp,
+  revision,
+  preview,
+  comparison,
+  approvedPlanId,
+  receipts,
+  onApprove,
+  onDismiss,
+}) {
+  const statusLabel = webmcp.status === 'registered'
+    ? webmcp.browserVerified
+      ? `${webmcp.toolCount} tools browser-verified`
+      : `${webmcp.toolCount} tools registered`
+    : webmcp.status === 'unsupported'
+      ? 'Browser support needed'
+      : webmcp.status === 'error'
+        ? 'Registration error'
+        : 'Checking…';
+
+  return (
+    <section className="agent-panel" aria-labelledby="agent-panel-title">
+      <div className="agent-panel__heading">
+        <div>
+          <p className="eyebrow">Human + agent control plane</p>
+          <h2 id="agent-panel-title">WebMCP collaboration</h2>
+        </div>
+        <div className="agent-panel__status" data-status={webmcp.status}>
+          <span aria-hidden="true" />
+          {statusLabel}
+        </div>
+      </div>
+
+      <div className="agent-panel__facts">
+        <div>
+          <span className="eyebrow">Schedule revision</span>
+          <strong>R{revision}</strong>
+        </div>
+        <div>
+          <span className="eyebrow">Agent authority</span>
+          <strong>Preview first</strong>
+        </div>
+        <div>
+          <span className="eyebrow">Human boundary</span>
+          <strong>Locks + exact approval</strong>
+        </div>
+        <div>
+          <span className="eyebrow">Browser proof</span>
+          <strong>
+            {webmcp.browserVerified
+              ? `Discovered ${webmcp.discoveredToolCount}/${webmcp.toolCount}`
+              : webmcp.status === 'registered'
+                ? 'Registration only'
+                : 'Pending'}
+          </strong>
+        </div>
+      </div>
+
+      <ol className="decision-rail" aria-label="LINECALL timing authority path">
+        <li>
+          <span aria-hidden="true">1</span>
+          <div><strong>Agent compares</strong><small>Counterfactual options</small></div>
+        </li>
+        <li>
+          <span aria-hidden="true">2</span>
+          <div><strong>Rules verify</strong><small>Locks · chronology · hard out</small></div>
+        </li>
+        <li>
+          <span aria-hidden="true">3</span>
+          <div><strong>Human approves</strong><small>Exact plan + revision</small></div>
+        </li>
+        <li>
+          <span aria-hidden="true">4</span>
+          <div><strong>Agent applies</strong><small>Once, with receipt</small></div>
+        </li>
+      </ol>
+
+      {comparison ? (
+        <section className="strategy-comparison" aria-labelledby="strategy-comparison-title">
+          <div className="strategy-comparison__heading">
+            <div>
+              <p className="eyebrow">Deterministic decision trace</p>
+              <h3 id="strategy-comparison-title">Two timing strategies checked</h3>
+            </div>
+            <span className={`strategy-verdict strategy-verdict--${comparison.status}`}>
+              {comparison.recommendedMode
+                ? `${comparison.recommendedMode === 'ripple_after' ? 'Ripple downstream' : 'Segment only'} recommended`
+                : 'No safe strategy'}
+            </span>
+          </div>
+          <div className="strategy-comparison__options">
+            {comparison.options.map((option) => {
+              const isRecommended = option.mode === comparison.recommendedMode;
+              const detail = option.lockedCueId
+                ? `Human lock ${option.lockedCueId.replace('cue-', 'Q')}`
+                : option.conflicts?.[0]?.message ?? 'All active constraints satisfied.';
+              return (
+                <article
+                  key={option.mode}
+                  className={`strategy-option strategy-option--${option.status}${isRecommended ? ' is-recommended' : ''}`}
+                >
+                  <div className="strategy-option__topline">
+                    <strong>{option.mode === 'ripple_after' ? 'Ripple downstream' : 'Segment only'}</strong>
+                    <span>{option.status === 'ready' ? 'Safe' : 'Blocked'}</span>
+                  </div>
+                  <p>{detail}</p>
+                  <small>{option.changedCueCount} exact cue change{option.changedCueCount === 1 ? '' : 's'}</small>
+                  {isRecommended ? <em>Recommended by deterministic constraints</em> : null}
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
+
+      {preview ? (
+        <article className={`agent-plan agent-plan--${preview.status}`} aria-live="polite">
+          <div className="agent-plan__topline">
+            <div>
+              <p className="eyebrow">Agent plan</p>
+              <h3>{preview.segmentLabel ?? 'Retime request'}</h3>
+            </div>
+            {preview.planId ? <code>{preview.planId}</code> : null}
+          </div>
+          <p>{preview.message}</p>
+
+          {preview.changes?.length ? (
+            <ol className="agent-plan__changes">
+              {preview.changes.slice(0, 5).map((change) => (
+                <li key={change.cueId}>
+                  <strong>Q{String(change.cueNumber).padStart(3, '0')}</strong>
+                  <span>{change.label}</span>
+                  <code>{change.from} → {change.to}</code>
+                </li>
+              ))}
+              {preview.changes.length > 5 ? (
+                <li className="agent-plan__more">+ {preview.changes.length - 5} more exact cue changes</li>
+              ) : null}
+            </ol>
+          ) : null}
+
+          {preview.conflicts?.length ? (
+            <ul className="agent-plan__conflicts">
+              {preview.conflicts.map((conflict, index) => (
+                <li key={`${conflict.type}-${conflict.cueId}-${index}`}>{conflict.message}</li>
+              ))}
+            </ul>
+          ) : null}
+
+          <div className="button-row">
+            {preview.status === 'ready' ? (
+              <button
+                type="button"
+                onClick={onApprove}
+                disabled={approvedPlanId === preview.planId}
+              >
+                {approvedPlanId === preview.planId ? 'Exact plan approved' : 'Approve this exact plan'}
+              </button>
+            ) : null}
+            <button type="button" className="button-secondary" onClick={onDismiss}>
+              Dismiss preview
+            </button>
+          </div>
+          {approvedPlanId === preview.planId ? (
+            <p className="agent-plan__approval">Approval is bound to this plan ID and revision. The agent can apply it once.</p>
+          ) : null}
+        </article>
+      ) : (
+        <div className="agent-brief">
+          <div className="agent-brief__copy">
+            <p className="eyebrow">Operator brief</p>
+            <strong>Give the agent a real timing problem, not a button to click.</strong>
+            <span>It can inspect the run, compare alternatives, and prepare an exact plan. Timing still cannot move until you approve it.</span>
+          </div>
+          <blockquote>
+            “Audience Q&amp;A needs to start two seconds later. Find the safest way to absorb the delay without breaking the run, and show me the exact change first.”
+          </blockquote>
+        </div>
+      )}
+
+      {receipts.length ? (
+        <div className="agent-receipt">
+          <p className="eyebrow">Latest receipt</p>
+          <strong>{receipts[0].summary}</strong>
+          <span>{receipts[0].changedCueCount} cues · {receipts[0].source} · R{receipts[0].revision}</span>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 export function App() {
   const initialState = useMemo(() => createInitialState(CUES), []);
   const [state, dispatch] = useReducer(appReducer, initialState);
+  const stateRef = useRef(state);
+  const webmcpApiRef = useRef(null);
   const cueButtons = useRef(new Map());
   const inspectorHeadingRef = useRef(null);
   const scoreHeadingRef = useRef(null);
   const shouldFocusInspector = useRef(false);
   const didPositionInitialCue = useRef(false);
 
-  const visibleCues = useMemo(() => filterCues(CUES, state), [state.departments, state.query]);
+  stateRef.current = state;
+
+  const visibleCues = useMemo(
+    () => filterCues(state.schedule, state),
+    [state.schedule, state.departments, state.query],
+  );
   const visibleIds = useMemo(() => visibleCues.map((cue) => cue.id), [visibleCues]);
-  const selectedCue = CUES.find((cue) => cue.id === state.selectedCueId) ?? null;
-  const sequence = useMemo(() => getSequenceContext(CUES), []);
+  const selectedCue = state.schedule.find((cue) => cue.id === state.selectedCueId) ?? null;
+  const sequence = useMemo(() => getSequenceContext(state.schedule), [state.schedule]);
+  const retimeComparison = useMemo(() => {
+    const preview = state.retimePreview;
+    if (!preview?.segmentId || !Number.isInteger(preview.offsetSeconds)) return null;
+    return compareRetimeStrategies({
+      schedule: state.schedule,
+      revision: state.revision,
+      expectedRevision: preview.expectedRevision ?? preview.revision ?? state.revision,
+      segmentId: preview.segmentId,
+      offsetSeconds: preview.offsetSeconds,
+    });
+  }, [state.schedule, state.revision, state.retimePreview]);
+
+  webmcpApiRef.current = {
+    getSnapshot() {
+      return createRunSnapshot(stateRef.current);
+    },
+    compareRetime({ segmentId, offsetSeconds, expectedRevision }) {
+      const current = stateRef.current;
+      return compareRetimeStrategies({
+        schedule: current.schedule,
+        revision: current.revision,
+        expectedRevision,
+        segmentId,
+        offsetSeconds,
+      });
+    },
+    previewRetime({ segmentId, offsetSeconds, mode, expectedRevision }) {
+      const current = stateRef.current;
+      const plan = previewSegmentRetime({
+        schedule: current.schedule,
+        revision: current.revision,
+        expectedRevision,
+        segmentId,
+        offsetSeconds,
+        mode,
+      });
+      dispatch({ type: 'SET_RETIME_PREVIEW', plan });
+      return {
+        ...plan,
+        humanApprovalRequired: plan.status === 'ready',
+        nextAction: plan.status === 'ready'
+          ? 'Ask the human operator to approve this exact plan in LINECALL before applying it.'
+          : 'Revise the plan to satisfy the reported constraint before asking for approval.',
+      };
+    },
+    applyApprovedRetime({ planId, expectedRevision }) {
+      const current = stateRef.current;
+      if (expectedRevision !== current.revision) {
+        return {
+          status: 'blocked',
+          reason: 'stale_revision',
+          currentRevision: current.revision,
+          message: 'The schedule changed after this plan was created. Read the run again.',
+        };
+      }
+      const plan = current.retimePreview;
+      if (!plan || plan.planId !== planId || plan.revision !== expectedRevision) {
+        return {
+          status: 'blocked',
+          reason: 'plan_mismatch',
+          message: 'That exact preview is no longer active. Preview the change again.',
+        };
+      }
+      if (current.approvedPlanId !== planId) {
+        return {
+          status: 'blocked',
+          reason: 'human_approval_required',
+          planId,
+          message: 'The human operator has not approved this exact plan in LINECALL.',
+        };
+      }
+      dispatch({ type: 'APPLY_RETIME_PLAN', plan });
+      return {
+        status: 'applied',
+        planId,
+        previousRevision: current.revision,
+        newRevision: current.revision + 1,
+        changedCueCount: plan.changes.length,
+        message: 'Approved plan applied once. Read the run again before proposing another timing change.',
+      };
+    },
+    setReadiness({ cueId, readiness, expectedRevision }) {
+      const current = stateRef.current;
+      if (expectedRevision !== current.revision) {
+        return {
+          status: 'blocked',
+          reason: 'stale_revision',
+          currentRevision: current.revision,
+        };
+      }
+      if (!current.schedule.some((cue) => cue.id === cueId)) {
+        return { status: 'blocked', reason: 'unknown_cue', cueId };
+      }
+      dispatch({ type: 'SET_READINESS', cueId, readiness });
+      return { status: 'applied', cueId, readiness, revision: current.revision };
+    },
+  };
+
+  useEffect(() => registerLinecallWebMCP(
+    webmcpApiRef,
+    (status) => dispatch({ type: 'SET_WEBMCP_STATUS', status }),
+    { allowApprovedRetime: Boolean(state.approvedPlanId) },
+  ), [state.approvedPlanId]);
 
   useEffect(() => {
     if (didPositionInitialCue.current || !state.selectedCueId) return;
@@ -285,6 +603,17 @@ export function App() {
         </div>
       </section>
 
+      <AgentCollaborationPanel
+        webmcp={state.webmcp}
+        revision={state.revision}
+        preview={state.retimePreview}
+        comparison={retimeComparison}
+        approvedPlanId={state.approvedPlanId}
+        receipts={state.receipts}
+        onApprove={() => dispatch({ type: 'APPROVE_RETIME_PREVIEW' })}
+        onDismiss={() => dispatch({ type: 'DISMISS_RETIME_PREVIEW' })}
+      />
+
       <main className="workspace" id="linecall-main" tabIndex="-1">
         <section className="score-panel" aria-labelledby="score-title">
           <div className="score-heading">
@@ -293,7 +622,7 @@ export function App() {
               <h2 id="score-title" ref={scoreHeadingRef} tabIndex="-1">Cue score</h2>
             </div>
             <p className="result-count" role="status">
-              {visibleCues.length} of {CUES.length} cues
+              {visibleCues.length} of {state.schedule.length} cues
               {activeFilterCount ? ` · ${activeFilterCount} active filter${activeFilterCount === 1 ? '' : 's'}` : ''}
             </p>
           </div>
@@ -379,6 +708,7 @@ export function App() {
           cue={selectedCue}
           readiness={selectedCue ? state.readiness[selectedCue.id] : 'pending'}
           onReadiness={(readiness) => selectedCue && updateReadiness(selectedCue.id, readiness)}
+          onToggleLock={() => selectedCue && dispatch({ type: 'TOGGLE_CUE_LOCK', cueId: selectedCue.id })}
           onClose={closeDetail}
           headingRef={inspectorHeadingRef}
           unavailable={state.dataState === 'error'}

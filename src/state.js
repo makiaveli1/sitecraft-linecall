@@ -1,16 +1,30 @@
+import { applyRetimePlan, createSchedule } from './schedule.js';
+
 export const DEPARTMENTS = ['stage', 'audio', 'lighting', 'video'];
 export const READINESS = ['pending', 'ready', 'check'];
 
 export function createInitialState(cues) {
-  const currentCue = cues.find((cue) => cue.runState === 'current') ?? cues[0] ?? null;
+  const schedule = createSchedule(cues);
+  const currentCue = schedule.find((cue) => cue.runState === 'current') ?? schedule[0] ?? null;
   return {
+    schedule,
+    revision: 1,
     selectedCueId: currentCue?.id ?? null,
     departments: [],
     query: '',
-    readiness: Object.fromEntries(cues.map((cue) => [cue.id, 'pending'])),
+    readiness: Object.fromEntries(schedule.map((cue) => [cue.id, 'pending'])),
     hold: false,
     dataState: 'ready',
     detailOpen: false,
+    retimePreview: null,
+    approvedPlanId: null,
+    receipts: [],
+    webmcp: {
+      supported: false,
+      status: 'checking',
+      toolCount: 0,
+      message: 'Checking browser WebMCP support…',
+    },
     announcement: currentCue
       ? `Current cue ${String(currentCue.number).padStart(3, '0')} selected.`
       : 'No cue is selected.',
@@ -29,9 +43,11 @@ export function filterCues(cues, state) {
       String(cue.number),
       cue.timecode,
       cue.department,
+      cue.segment,
       cue.label,
       cue.instruction,
       cue.notes,
+      cue.locked ? 'locked human lock' : '',
     ]
       .join(' ')
       .toLocaleLowerCase();
@@ -61,6 +77,17 @@ export function nextVisibleCueId(visibleIds, selectedCueId, delta) {
 function humanCueNumber(cueId) {
   const number = String(cueId ?? '').replace('cue-', '');
   return number || 'unknown';
+}
+
+function receiptForPlan(plan, revision) {
+  return {
+    id: `receipt-r${revision}-${plan.planId}`,
+    revision,
+    planId: plan.planId,
+    summary: `${plan.segmentLabel} moved ${plan.offsetSeconds > 0 ? '+' : ''}${plan.offsetSeconds}s using ${plan.mode === 'ripple_after' ? 'ripple' : 'segment-only'} mode.`,
+    changedCueCount: plan.changes.length,
+    source: 'WebMCP agent + human approval',
+  };
 }
 
 export function appReducer(state, action) {
@@ -118,6 +145,7 @@ export function appReducer(state, action) {
       };
     case 'SET_READINESS':
       if (!READINESS.includes(action.readiness)) return state;
+      if (!state.schedule.some((cue) => cue.id === action.cueId)) return state;
       return {
         ...state,
         readiness: {
@@ -125,6 +153,65 @@ export function appReducer(state, action) {
           [action.cueId]: action.readiness,
         },
         announcement: `Cue ${humanCueNumber(action.cueId)} readiness set to ${action.readiness}.`,
+      };
+    case 'TOGGLE_CUE_LOCK': {
+      const schedule = state.schedule.map((cue) =>
+        cue.id === action.cueId ? { ...cue, locked: !cue.locked } : cue,
+      );
+      const cue = schedule.find((item) => item.id === action.cueId);
+      if (!cue) return state;
+      return {
+        ...state,
+        schedule,
+        revision: state.revision + 1,
+        retimePreview: null,
+        approvedPlanId: null,
+        announcement: `Cue ${humanCueNumber(action.cueId)} ${cue.locked ? 'locked for agent changes' : 'unlocked'}.`,
+      };
+    }
+    case 'SET_RETIME_PREVIEW':
+      return {
+        ...state,
+        retimePreview: action.plan,
+        approvedPlanId: null,
+        announcement: action.plan?.status === 'ready'
+          ? 'Agent retime preview is ready for human review.'
+          : 'Agent retime preview was blocked by schedule constraints.',
+      };
+    case 'APPROVE_RETIME_PREVIEW':
+      if (!state.retimePreview || state.retimePreview.status !== 'ready') return state;
+      return {
+        ...state,
+        approvedPlanId: state.retimePreview.planId,
+        announcement: 'Exact retime plan approved. The agent may now apply it once.',
+      };
+    case 'DISMISS_RETIME_PREVIEW':
+      return {
+        ...state,
+        retimePreview: null,
+        approvedPlanId: null,
+        announcement: 'Agent retime preview dismissed.',
+      };
+    case 'APPLY_RETIME_PLAN': {
+      const plan = action.plan;
+      if (!plan || plan.status !== 'ready') return state;
+      if (state.approvedPlanId !== plan.planId) return state;
+      if (plan.revision !== state.revision) return state;
+      const nextRevision = state.revision + 1;
+      return {
+        ...state,
+        schedule: applyRetimePlan(state.schedule, plan),
+        revision: nextRevision,
+        retimePreview: null,
+        approvedPlanId: null,
+        receipts: [receiptForPlan(plan, nextRevision), ...state.receipts].slice(0, 5),
+        announcement: `${plan.segmentLabel} retime applied. Schedule revision ${nextRevision}.`,
+      };
+    }
+    case 'SET_WEBMCP_STATUS':
+      return {
+        ...state,
+        webmcp: action.status,
       };
     case 'TOGGLE_HOLD':
       return {
@@ -150,6 +237,7 @@ export function appReducer(state, action) {
     case 'RESET':
       return {
         ...action.initialState,
+        webmcp: state.webmcp,
         announcement: 'LINECALL fixture reset to its initial state.',
       };
     default:

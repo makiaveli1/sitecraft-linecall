@@ -31,7 +31,7 @@ export const CUES = [
   cue(11, '00:14', 'lighting', 'House out standby', 'Stand by house out and stage opening look.'),
   cue(12, '00:15', 'stage', 'Host walk-on', 'Call host from stage left and confirm clear deck.', 'Current rehearsal cue.'),
   cue(13, '00:15', 'audio', 'Host mic live', 'Open host microphone when host reaches mark.'),
-  cue(14, '00:15', 'lighting', 'Opening look', 'Take house out and bring opening stage look to full.'),
+  { ...cue(14, '00:15', 'lighting', 'Opening look', 'Take house out and bring opening stage look to full.'), locked: true },
   cue(15, '00:16', 'video', 'Opening ident play', 'Roll ident and take programme output on first frame.'),
   cue(16, '00:17', 'audio', 'Ident sting', 'Play short ident sting under final logo resolve.'),
   cue(17, '00:18', 'stage', 'Speaker A go', 'Send first speaker on host introduction.'),

@@ -5,8 +5,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "test": "node --test tests/*.test.js",
-    "test:contract": "python3 test_contract.py"
+    "test": "node --test tests/*.test.js"
   },
   "dependencies": {
     "react": "19.2.8",
