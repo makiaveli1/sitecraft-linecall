@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "siteUrl": "https://distant-quarry-p6h2.here.now/",
+  "finalizeState": "live",
+  "persistenceBeforeClaim": "expiring",
+  "claimCiphertext": "knh9JKndibiy0UWprvfaPgZf6rFzMsrvEcYpxmtYNgSxar2aXXCaHH3hfBXC3BdAbNRuzGp9U1IsGq9bgE5iK0ps4hY0NvXhmY+85egWE6M+J5z5Y4rRBnGVPcs3lpbK/8HyopVkzmrZbLCGhWS0c6CrqFhj6pbPJk97MDRuGOooEqriN9jDIGDHjgCnTF1AKdQdhSAhB/aC7oWEtZJXeG8IN1bB4IkmsONoVu8fZccYaT5qRc7D/uLYnO2rCgzbIw/t1DTtGtWuz7Aa5RtpNMMZVUqb6l9VEUOpktxkcqloCAueoAQnWABhxxKwpVxJr7XqZQKK+0ZXgLPoC8jVLA==",
+  "sourceSha": "909ba2461c60cf8e732629e4394197d0d989e48f",
+  "generatedAt": "2026-08-27T15:13:00.410Z"
+}
