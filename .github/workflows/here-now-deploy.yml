@@ -41,7 +41,7 @@ jobs:
           const expected = new Map([
             ['index.html', 1306],
             ['assets/index-Bo115f6O.css', 22714],
-            ['assets/index-Sfr5m6ld.js', 229711],
+            ['assets/index-DVG7vk3R.js', 229672],
           ]);
 
           const found = [];
