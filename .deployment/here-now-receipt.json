@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "siteUrl": "https://starry-signal-y2ey.here.now/",
+  "siteUrl": "https://quiet-fossil-wxms.here.now/",
   "finalizeState": "live",
   "persistenceBeforeClaim": "expiring",
-  "claimCiphertext": "CX16Z6I0nm8pyvWgiSLP25dXZsDjHiRqbslzDujO/Am/5oTjltfZ4BtnaXOGH3XVl8YwbUDX39GykM6GkyixKIT8mwfVxNCyK/ix6ZyoUiX/Ac1Nn0TLx64Tx/ci8mVoxHv8NSXjVhmpxkl/GJyWjRUphgHjuaaezXLbkFqTPion+QCEz+kzgU6Qja+BIOG//bbH4Jpj2q9RxsgAnnjehbScc2nHZECrQ5IJLPuBd+TcmDYA2T2As1THGlKKC94Oj2/Ib4enrYG+vTROw90wwULcu7n6yt8EE0HI2000DnbcI2po4H5twhOzQDyg6wqpRGrurvZ8inWEoLNOSw5nPw==",
-  "sourceSha": "58dc8dd5f4d2a5ad678669f387f9ed6ce7e1fafa",
-  "generatedAt": "2026-08-27T15:59:37.338Z"
+  "claimCiphertext": "Z8CEzXvrThJc8mnOHT7c6EuwI8+DBvqTOMrofNVSFgrWOMHHfPuMtG75gjcgMcyZqcQUxAhYSTjgWQOE5F0KA/3EHtruQkBm+3RU6r3cxchJchoTrSgAE+aYh3BPTUshpCGl/tweQi5RfuxMCP/gcKJBYA0f/KRFrMtngzZwyoCO5hZFO2Zc4dFg5tjm/njoOexm1FZDD8CLcs3/fMxkh2SG8GNGcInYrTs1jTCuofF+aWRwcdbnVNGG1U9jSKAKr6UMQ7K1pGzHwQd0pO7ySzQFDJOpi5DA8UVHbShNXHwxLy/xPBEqfKVVVepoO8FDcH5USqvoCOh630QQ+hGhxA==",
+  "sourceSha": "d108403b6f7d48fd4066852c626e6ce870532ef2",
+  "generatedAt": "2026-08-27T21:06:37.312Z"
 }
