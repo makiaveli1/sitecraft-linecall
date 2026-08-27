@@ -1,0 +1,153 @@
+name: Deploy LINECALL to here.now
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/here-now-deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build exact LINECALL production bundle
+        run: npm run build
+
+      - name: Verify exact expected bundle shape
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const crypto = require('crypto');
+
+          const expected = new Map([
+            ['index.html', 1306],
+            ['assets/index-Bo115f6O.css', 22714],
+            ['assets/index-Sfr5m6ld.js', 229711],
+          ]);
+
+          const found = [];
+          function walk(dir, prefix = '') {
+            for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+              const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+              const abs = path.join(dir, entry.name);
+              if (entry.isDirectory()) walk(abs, rel);
+              else found.push(rel);
+            }
+          }
+          walk('dist');
+          found.sort();
+
+          const expectedPaths = [...expected.keys()].sort();
+          if (JSON.stringify(found) !== JSON.stringify(expectedPaths)) {
+            console.error('Unexpected dist file set:', found);
+            process.exit(1);
+          }
+
+          for (const [rel, expectedSize] of expected) {
+            const data = fs.readFileSync(path.join('dist', rel));
+            if (data.length !== expectedSize) {
+              console.error(`${rel}: expected ${expectedSize} bytes, got ${data.length}`);
+              process.exit(1);
+            }
+            const sha256 = crypto.createHash('sha256').update(data).digest('hex');
+            console.log(`BUNDLE_SHA256 ${rel} ${sha256}`);
+          }
+          NODE
+
+      - name: Publish verified bundle to here.now
+        shell: bash
+        env:
+          CLAIM_PUBLIC_KEY_B64: 'LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUFtRlc4K3F6d2R0QmUzeHlYVVhlOApWWDlwYzVFVnNPdHNqR0trT2cxd3dUcEhSNnhuVjcyZ1Yya1k1MUg1M0d5MEhPb1l0eUJLZFQvYmlhVGduVDBhCnNIbC9TaUc3TEtZb3pqU2F2bG80eE5FMGFLQ3k5TExmQnVGSjFSWXZ5OE5zcDZkYUJyWGpPaDZ4VXVrWlNhWEUKZndCZTExejNjV3h1UjZqRFhkM0hQM2tGbXBxcHFSSE9HZzZaN2I1RWtSaEdFQnN2UStQRnlZTksrUW1BN2lUdgphNVdqNnlBRWxHTzgxS3FydENGaE93T2hxWWM5aTNoV3NRSzhwMU1WdnYxZEFGT2M1YWhoRjBCZEdLYVUxaTIrCklhK1pCQU41ZEhmOFQ1RVE0RHdhRm5DbUFPZzNrVFF6OEtoUEtIdG1GOCsvL1hMVDcrRkJnRGpaUUhYUkdKd3IKaXdJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg=='
+        run: |
+          set -euo pipefail
+          trap 'rm -f /tmp/linecall-create.json /tmp/linecall-public.pem' EXIT
+
+          printf '%s' "$CLAIM_PUBLIC_KEY_B64" | tr -d ' ' | base64 -d > /tmp/linecall-public.pem
+
+          cat > /tmp/linecall-publish.json <<'JSON'
+          {
+            "displayName": "LINECALL",
+            "displayDescription": "A WebMCP-powered live production cue desk where agents reason, deterministic rules verify, and human operators keep final authority.",
+            "spaMode": true,
+            "files": [
+              {"path":"index.html","size":1306,"contentType":"text/html; charset=utf-8"},
+              {"path":"assets/index-Bo115f6O.css","size":22714,"contentType":"text/css; charset=utf-8"},
+              {"path":"assets/index-Sfr5m6ld.js","size":229711,"contentType":"text/javascript; charset=utf-8"}
+            ]
+          }
+          JSON
+
+          create_json="$(curl -fsS https://here.now/api/v1/publish \
+            -H 'X-HereNow-Client: github-actions/linecall' \
+            -H 'content-type: application/json' \
+            --data-binary @/tmp/linecall-publish.json)"
+          printf '%s' "$create_json" > /tmp/linecall-create.json
+
+          site_url="$(node -e "const r=require('/tmp/linecall-create.json'); if(!r.siteUrl) process.exit(2); process.stdout.write(r.siteUrl)")"
+          claim_url="$(node -e "const r=require('/tmp/linecall-create.json'); if(!r.claimUrl) process.exit(2); process.stdout.write(r.claimUrl)")"
+          version_id="$(node -e "const r=require('/tmp/linecall-create.json'); if(!r.upload?.versionId) process.exit(2); process.stdout.write(r.upload.versionId)")"
+          finalize_url="$(node -e "const r=require('/tmp/linecall-create.json'); if(!r.upload?.finalizeUrl) process.exit(2); process.stdout.write(r.upload.finalizeUrl)")"
+
+          while IFS='|' read -r rel content_type; do
+            upload_url="$(node -e "const r=require('/tmp/linecall-create.json'); const p=process.argv[1]; const u=r.upload?.uploads?.find(x=>x.path===p); if(!u?.url) process.exit(2); process.stdout.write(u.url)" "$rel")"
+            curl -fsS -X PUT "$upload_url" \
+              -H "Content-Type: $content_type" \
+              --data-binary "@dist/$rel" >/dev/null
+          done <<'FILES'
+          index.html|text/html; charset=utf-8
+          assets/index-Bo115f6O.css|text/css; charset=utf-8
+          assets/index-Sfr5m6ld.js|text/javascript; charset=utf-8
+          FILES
+
+          finalize_json="$(curl -fsS -X POST "$finalize_url" \
+            -H 'content-type: application/json' \
+            --data-binary "{\"versionId\":\"$version_id\"}")"
+
+          state="$(node -e "const r=JSON.parse(process.argv[1]); process.stdout.write(r.publishStatus?.state || '')" "$finalize_json")"
+          persistence="$(node -e "const r=JSON.parse(process.argv[1]); process.stdout.write(r.publishStatus?.persistence || '')" "$finalize_json")"
+          if [[ "$state" != "live" ]]; then
+            echo "here.now finalize did not report live state" >&2
+            exit 1
+          fi
+
+          claim_ciphertext="$(printf '%s' "$claim_url" | \
+            openssl pkeyutl -encrypt -pubin -inkey /tmp/linecall-public.pem \
+              -pkeyopt rsa_padding_mode:oaep \
+              -pkeyopt rsa_oaep_md:sha256 \
+              -pkeyopt rsa_mgf1_md:sha256 | base64 -w 0)"
+
+          echo "LINECALL_SITE_URL=$site_url"
+          echo "LINECALL_FINALIZE_STATE=$state"
+          echo "LINECALL_FINALIZE_PERSISTENCE=$persistence"
+          echo "LINECALL_CLAIM_CIPHERTEXT=$claim_ciphertext"
+
+          {
+            echo '### LINECALL here.now deployment receipt'
+            echo "- Site: $site_url"
+            echo "- Finalize state: $state"
+            echo "- Persistence before claim: $persistence"
+            echo '- Claim URL: encrypted with the one-time public key embedded in this workflow'
+            echo
+            echo '```text'
+            echo "$claim_ciphertext"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
