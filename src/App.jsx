@@ -580,14 +580,14 @@ export function App() {
           onClick={() => dispatch({ type: 'TOGGLE_HOLD' })}
         >
           <span className="hold-control__state">{state.hold ? 'HOLD' : 'RUN'}</span>
-          <span>{state.hold ? 'Resume local run' : 'Place local run on hold'}</span>
+          <span>{state.hold ? 'Resume run' : 'Place run on hold'}</span>
         </button>
       </header>
 
       <section className={`run-strip ${state.hold ? 'run-strip--hold' : ''}`} aria-label="Run status">
         <div className="run-strip__mode">
           <span className="eyebrow">Run status</span>
-          <strong>{state.hold ? 'Local rehearsal held' : 'Local rehearsal running'}</strong>
+          <strong>{state.hold ? 'Run held' : 'Run active'}</strong>
         </div>
         <div className="run-context">
           <div>

@@ -7,12 +7,13 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const packageJson = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
 const appSource = fs.readFileSync(path.join(ROOT, 'src/App.jsx'), 'utf8');
+const dataSource = fs.readFileSync(path.join(ROOT, 'src/data.js'), 'utf8');
 const mainSource = fs.readFileSync(path.join(ROOT, 'src/main.jsx'), 'utf8');
 const cssSource = fs.readFileSync(path.join(ROOT, 'src/styles.css'), 'utf8');
 const indexSource = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 const viteSource = fs.readFileSync(path.join(ROOT, 'vite.config.js'), 'utf8');
 const pagesWorkflowSource = fs.readFileSync(path.join(ROOT, '.github/workflows/pages.yml'), 'utf8');
-const combinedSource = [appSource, mainSource, cssSource, indexSource].join('\n').toLowerCase();
+const combinedSource = [appSource, dataSource, mainSource, cssSource, indexSource].join('\n').toLowerCase();
 
 test('declared dependency surface stays intentionally small and reproducible', () => {
   assert.deepEqual(packageJson.dependencies, {
@@ -108,8 +109,17 @@ test('source retains cue-score language and avoids generic dashboard/card framin
   assert.ok(appSource.includes('Run of show'));
   assert.ok(appSource.includes('Now'));
   assert.ok(appSource.includes('Next'));
+  assert.ok(dataSource.includes("mode: 'Production demo'"));
 
-  for (const forbidden of ['kpi-card', 'analytics-card', 'dashboard-grid', 'kanban']) {
+  for (const forbidden of [
+    'kpi-card',
+    'analytics-card',
+    'dashboard-grid',
+    'kanban',
+    'local rehearsal',
+    'local run',
+    'rehearsal fixture',
+  ]) {
     assert.equal(combinedSource.includes(forbidden), false);
   }
 });

@@ -41,7 +41,7 @@ jobs:
           const expected = new Map([
             ['index.html', 1306],
             ['assets/index-Bo115f6O.css', 22714],
-            ['assets/index-Sfr5m6ld.js', 229711],
+            ['assets/index-DVG7vk3R.js', 229672],
           ]);
 
           const found = [];
@@ -91,7 +91,7 @@ jobs:
             "files": [
               {"path":"index.html","size":1306,"contentType":"text/html; charset=utf-8"},
               {"path":"assets/index-Bo115f6O.css","size":22714,"contentType":"text/css; charset=utf-8"},
-              {"path":"assets/index-Sfr5m6ld.js","size":229711,"contentType":"text/javascript; charset=utf-8"}
+              {"path":"assets/index-DVG7vk3R.js","size":229672,"contentType":"text/javascript; charset=utf-8"}
             ]
           }
           JSON
@@ -115,7 +115,7 @@ jobs:
           done <<'FILES'
           index.html|text/html; charset=utf-8
           assets/index-Bo115f6O.css|text/css; charset=utf-8
-          assets/index-Sfr5m6ld.js|text/javascript; charset=utf-8
+          assets/index-DVG7vk3R.js|text/javascript; charset=utf-8
           FILES
 
           finalize_json="$(curl -fsS -X POST "$finalize_url" \

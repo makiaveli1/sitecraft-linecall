@@ -1,7 +1,7 @@
 export const SHOW_META = {
   title: 'Orbital Assembly',
   room: 'Main Stage',
-  mode: 'Rehearsal fixture',
+  mode: 'Production demo',
 };
 
 function cue(number, timecode, department, label, instruction, notes = '') {
