@@ -133,22 +133,40 @@ Summarize the model: **agent explores, deterministic rules verify, human approve
 
 ## Verification evidence
 
-Current verified challenge branch evidence:
+Current verified public release evidence:
 
-- Public branch: `makiaveli1/sitecraft-linecall` → `webmcp-challenge`
+- Public repository: `makiaveli1/sitecraft-linecall`
+- Default release branch: `main`
+- Challenge provenance branch: `webmcp-challenge`
 - Pre-challenge baseline: `c84cb79ebce4975826b37aa4d63044555674d1f3`
-- Current hardening commit: `4db6e514d5befa2ec4c0820f2447acb694bfd860`
+- Verified default-branch release commit: `e3bcf7dc392f8769743b7db00fec59a70d0b6385`
+- Latest judge-brief source commit on the challenge branch: `ab482d9b5f15cf4d27737a18512e282b3615b2fe`
 - Production build: passed
 - Tests: **29 passed / 0 failed / 0 skipped**
 - Real Chromium production interaction test: passed
-- Exact-state Bridge verification: passed with no project fingerprint drift
+- Exact-state Bridge verification: passed on the merged `main` tree and again on commit `e3bcf7d`, with no project fingerprint drift
 
 The automated Chromium WebMCP rehearsal uses a controlled `document.modelContext` contract shim. It proves the production app's registration, capability lifecycle, UI, and handlers in real Chromium, but it is **not** claimed as native experimental-WebMCP proof. Native proof remains a separate pre-submission gate.
+
+## Native WebMCP proof procedure
+
+Run this only against the final HTTPS deployment in ChatGPT's WebMCP-capable in-app browser or Chrome 149+ with `chrome://flags/#enable-webmcp-testing` enabled and the Model Context Tool Inspector installed.
+
+1. Open the deployed LINECALL URL and confirm `document.modelContext.getTools()` / the Inspector shows exactly the four normal-session tools and does **not** show `linecall_apply_approved_retime`.
+2. Use the primary Q&A +2s prompt and record the observed tool sequence. It should inspect state, compare strategies, stage the safe `ripple_after` plan, and stop for human approval.
+3. Confirm the visible Decision Trace shows segment-only as blocked, ripple downstream as safe/recommended, and the exact 13-cue change set.
+4. Click **Approve this exact plan** as the human operator, then refresh the Inspector tool list. The apply capability should now exist and total active tools should be five.
+5. Ask the agent to apply the approved plan. Confirm R1 → R2, Q020 → `00:24`, Q032 → `00:47`, and a visible receipt.
+6. Refresh tool discovery again. `linecall_apply_approved_retime` should be gone and the active set should be back to four.
+7. Run the locked-opening prompt and confirm Q014 blocks the retime with no unlock capability available.
+8. Run the unrelated weather prompt and confirm no LINECALL tool is selected.
+
+Record tool names, observed call order, visible UI state, and any divergence from the expected sequence. Do not convert this checklist to a passing claim until the final deployed origin has actually completed the run.
 
 ## Submission fields to finalize
 
 - **Live URL:** `[ADD ONLY AFTER VERIFIED DEPLOYMENT]`
-- **Public repository:** `makiaveli1/sitecraft-linecall`, branch `webmcp-challenge`
+- **Public repository:** `makiaveli1/sitecraft-linecall` on default branch `main`
 - **Demo video:** `[ADD PUBLIC YOUTUBE URL — MUST BE UNDER 3 MINUTES]`
 - **Testing instructions:** use the primary prompt above, then the trust prompt.
 

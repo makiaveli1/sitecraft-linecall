@@ -162,7 +162,7 @@ This demonstrates that the agent is not merely operating the interface. It is co
 
 Highest priority:
 
-1. Deploy the freshly verified `webmcp-challenge` production `dist/` to a permanent HTTPS site and confirm WebMCP discovery on that exact deployment. The public challenge branch is already published from the pre-challenge baseline.
+1. Deploy the freshly verified default `main` production `dist/` to a permanent HTTPS site and confirm WebMCP discovery on that exact deployment. `main` now contains the verified challenge release while `webmcp-challenge` remains as an explicit provenance branch from the pre-challenge baseline.
 2. Run the deployed app in ChatGPT's WebMCP-capable in-app browser or Chrome 149+ with WebMCP enabled and capture genuine tool discovery + execution evidence, including the 4 -> 5 -> 4 approval-gated capability lifecycle.
 3. Run the seven natural-language eval prompts through the Model Context Tool Inspector / compatible agent and record observed call sequences, failures, and prompt/tool-description refinements.
 4. Perform a final attended visual review of the deployed frontend and fix only issues supported by fresh evidence.
