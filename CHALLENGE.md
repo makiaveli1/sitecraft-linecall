@@ -30,7 +30,7 @@ Human cue locks are not exposed as an agent tool. An agent cannot unlock a cue o
 
 ### Agent tool surface
 
-Added five imperative WebMCP tools with `document.modelContext.registerTool`:
+Defined five imperative WebMCP tools with `document.modelContext.registerTool`, while dynamically exposing only the currently usable subset to the browser. Four tools are available before timing approval; `linecall_apply_approved_retime` is registered only while an exact operator-approved plan is active, then withdrawn after use or invalidation:
 
 - `linecall_get_run_snapshot`
 - `linecall_compare_retime_options`
@@ -44,11 +44,11 @@ The surface is deliberately small. Timing mutation uses explicit `plan_id` and `
 
 The WebMCP contract was audited against the current Chrome guidance.
 
-- Snapshot and counterfactual comparison remain read-only.
-- `linecall_preview_segment_retime` is correctly marked as state-changing because it changes visible collaboration state even though it does not alter cue timing.
-- Preview is marked non-destructive and idempotent.
+- Snapshot and counterfactual comparison use the standardized `readOnlyHint` because they do not change state.
+- `linecall_preview_segment_retime` is correctly marked state-changing because it changes visible collaboration state even though it does not alter cue timing.
+- The contract now uses only annotations defined by the current WebMCP specification: `readOnlyHint` and `untrustedContentHint`.
 - Tools that can return operator-authored schedule content use `untrustedContentHint`.
-- The apply tool remains an explicit mutation and cannot be replayed after the schedule revision advances.
+- The apply tool remains an explicit mutation, is hidden until exact human approval exists, and is withdrawn after the approved action is consumed or invalidated.
 
 ### Deterministic scheduling engine
 
@@ -82,7 +82,7 @@ Added an in-product WebMCP collaboration surface showing:
 - per-cue human lock controls; and
 - browser-level tool discovery status.
 
-When `document.modelContext.getTools()` is available, LINECALL checks whether all five LINECALL tools can be rediscovered and distinguishes browser-verified discovery from registration-only state.
+When `document.modelContext.getTools()` is available, LINECALL checks whether the currently active capability set can be rediscovered and distinguishes browser-verified discovery from registration-only state. The expected lifecycle is four tools before approval, five while an exact approved retime is actionable, and four again after that one-time authority is consumed or invalidated.
 
 ### WebMCP agent evals
 
@@ -162,11 +162,10 @@ This demonstrates that the agent is not merely operating the interface. It is co
 
 Highest priority:
 
-1. Publish the verified `webmcp-challenge` branch so the dated challenge delta is visible from the pre-challenge LINECALL baseline.
-2. Deploy the freshly verified production `dist/` to a permanent HTTPS site and confirm WebMCP discovery on that exact deployment.
-3. Run the deployed app in ChatGPT's WebMCP-capable in-app browser or Chrome 149+ with WebMCP enabled and capture genuine tool discovery + execution evidence.
-4. Run the seven natural-language eval prompts through the Model Context Tool Inspector / compatible agent and record observed call sequences, failures, and prompt/tool-description refinements.
-5. Perform a final attended visual review of the deployed frontend and fix only issues supported by fresh evidence.
-6. Finalize submission copy and a public YouTube demo under three minutes.
+1. Deploy the freshly verified `webmcp-challenge` production `dist/` to a permanent HTTPS site and confirm WebMCP discovery on that exact deployment. The public challenge branch is already published from the pre-challenge baseline.
+2. Run the deployed app in ChatGPT's WebMCP-capable in-app browser or Chrome 149+ with WebMCP enabled and capture genuine tool discovery + execution evidence, including the 4 -> 5 -> 4 approval-gated capability lifecycle.
+3. Run the seven natural-language eval prompts through the Model Context Tool Inspector / compatible agent and record observed call sequences, failures, and prompt/tool-description refinements.
+4. Perform a final attended visual review of the deployed frontend and fix only issues supported by fresh evidence.
+5. Finalize submission copy and a public YouTube demo under three minutes.
 
 Do not claim the challenge goal complete until live WebMCP execution, public provenance, deployment, and submission assets are verified.

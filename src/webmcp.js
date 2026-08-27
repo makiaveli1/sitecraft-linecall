@@ -1,3 +1,5 @@
+const APPLY_APPROVED_RETIME_TOOL = 'linecall_apply_approved_retime';
+
 const TOOL_DEFINITIONS = [
   {
     name: 'linecall_get_run_snapshot',
@@ -70,8 +72,6 @@ const TOOL_DEFINITIONS = [
     },
     annotations: {
       readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: true,
       untrustedContentHint: true,
     },
   },
@@ -94,7 +94,7 @@ const TOOL_DEFINITIONS = [
       required: ['plan_id', 'expected_revision'],
       additionalProperties: false,
     },
-    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
+    annotations: { readOnlyHint: false },
   },
   {
     name: 'linecall_set_cue_readiness',
@@ -120,7 +120,7 @@ const TOOL_DEFINITIONS = [
       required: ['cue_id', 'readiness', 'expected_revision'],
       additionalProperties: false,
     },
-    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
+    annotations: { readOnlyHint: false },
   },
 ];
 
@@ -133,7 +133,11 @@ function unsupportedResult() {
   };
 }
 
-export function registerLinecallWebMCP(apiRef, onStatus) {
+export function registerLinecallWebMCP(
+  apiRef,
+  onStatus,
+  { allowApprovedRetime = false } = {},
+) {
   const modelContext = document?.modelContext;
   if (!modelContext?.registerTool) {
     const result = unsupportedResult();
@@ -142,6 +146,9 @@ export function registerLinecallWebMCP(apiRef, onStatus) {
   }
 
   const abortController = new AbortController();
+  const activeDefinitions = TOOL_DEFINITIONS.filter(
+    (definition) => allowApprovedRetime || definition.name !== APPLY_APPROVED_RETIME_TOOL,
+  );
 
   const handlers = {
     linecall_get_run_snapshot: async () => apiRef.current.getSnapshot(),
@@ -172,7 +179,7 @@ export function registerLinecallWebMCP(apiRef, onStatus) {
     }) => apiRef.current.setReadiness({ cueId, readiness, expectedRevision }),
   };
 
-  const registrations = TOOL_DEFINITIONS.map((definition) =>
+  const registrations = activeDefinitions.map((definition) =>
     document.modelContext.registerTool(
       {
         ...definition,
@@ -191,12 +198,12 @@ export function registerLinecallWebMCP(apiRef, onStatus) {
       if (typeof modelContext.getTools === 'function') {
         try {
           const availableTools = await modelContext.getTools();
-          const expectedNames = new Set(TOOL_DEFINITIONS.map(({ name }) => name));
+          const expectedNames = new Set(activeDefinitions.map(({ name }) => name));
           discoveredToolCount = availableTools.filter((tool) => expectedNames.has(tool.name)).length;
-          browserVerified = discoveredToolCount === TOOL_DEFINITIONS.length;
+          browserVerified = discoveredToolCount === activeDefinitions.length;
           discoveryMessage = browserVerified
-            ? ' All five tools were rediscovered through document.modelContext.getTools().'
-            : ` Browser discovery found ${discoveredToolCount} of ${TOOL_DEFINITIONS.length} LINECALL tools.`;
+            ? ` All ${activeDefinitions.length} active LINECALL tools were rediscovered through document.modelContext.getTools().`
+            : ` Browser discovery found ${discoveredToolCount} of ${activeDefinitions.length} active LINECALL tools.`;
         } catch (error) {
           discoveryMessage = ` Browser discovery check was unavailable: ${error instanceof Error ? error.message : String(error)}`;
         }
@@ -205,10 +212,11 @@ export function registerLinecallWebMCP(apiRef, onStatus) {
       onStatus?.({
         supported: true,
         status: 'registered',
-        toolCount: TOOL_DEFINITIONS.length,
+        toolCount: activeDefinitions.length,
         discoveredToolCount,
         browserVerified,
-        message: `${TOOL_DEFINITIONS.length} WebMCP tools registered for this LINECALL session.${discoveryMessage}`,
+        approvedApplyAvailable: allowApprovedRetime,
+        message: `${activeDefinitions.length} WebMCP tools registered for this LINECALL session. ${allowApprovedRetime ? 'The exact approved-plan apply capability is available.' : 'The apply capability stays hidden until the human approves an exact plan.'}${discoveryMessage}`,
       });
     })
     .catch((error) => {

@@ -21,9 +21,11 @@ test('LINECALL exposes a small focused WebMCP surface', () => {
   assert.equal(tools[1].annotations.readOnlyHint, true);
   assert.equal(tools[1].annotations.untrustedContentHint, true);
   assert.equal(tools[2].annotations.readOnlyHint, false);
-  assert.equal(tools[2].annotations.idempotentHint, true);
   assert.equal(tools[2].annotations.untrustedContentHint, true);
-  assert.equal(tools[3].annotations.readOnlyHint, false);
+  assert.equal('destructiveHint' in tools[2].annotations, false);
+  assert.equal('idempotentHint' in tools[2].annotations, false);
+  assert.deepEqual(tools[3].annotations, { readOnlyHint: false });
+  assert.deepEqual(tools[4].annotations, { readOnlyHint: false });
 });
 
 test('mutating retime tool requires exact plan and revision', () => {

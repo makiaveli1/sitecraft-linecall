@@ -22,7 +22,7 @@ The agent cannot unlock a human-owned cue and cannot approve its own retiming pl
 
 ## WebMCP tool surface
 
-LINECALL registers five imperative tools with `document.modelContext.registerTool`:
+LINECALL defines five imperative WebMCP tools with `document.modelContext.registerTool`, but deliberately exposes only the four currently usable capabilities before human approval. The exact-plan apply tool appears only while a matching operator approval is active, then is withdrawn after use or invalidation:
 
 | Tool | Purpose | Changes state? |
 | --- | --- | --- |
@@ -55,7 +55,7 @@ A second trust test asks the agent to move the Opening sequence. Cue Q014 is hum
 
 ## Browser-visible WebMCP proof
 
-LINECALL does more than report that registration code ran. When the browser exposes `document.modelContext.getTools()`, the collaboration panel checks whether all five LINECALL tools can be rediscovered and distinguishes:
+LINECALL does more than report that registration code ran. When the browser exposes `document.modelContext.getTools()`, the collaboration panel verifies the currently active capability set. The expected surface is four tools before timing approval, five only while an exact approved retime is actionable, and four again after that one-time authority is consumed or invalidated. The UI distinguishes:
 
 - tools registered;
 - tools browser-verified through discovery; and
@@ -72,7 +72,8 @@ Retiming follows a preview-and-approve flow:
 - locked cues cannot be moved;
 - hard-out and chronology violations block the plan;
 - approval is bound to an exact deterministic plan ID;
-- applying a plan advances the revision, preventing replay;
+- the apply capability is not exposed to the browser until that exact human approval exists;
+- applying or invalidating the plan withdraws that one-time capability and advances the revision, preventing replay;
 - the agent has no capability for removing human locks;
 - successful retimes produce a visible receipt.
 

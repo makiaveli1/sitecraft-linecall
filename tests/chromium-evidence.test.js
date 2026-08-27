@@ -508,14 +508,19 @@ test('production build renders and behaves across real Chromium viewport states'
     const toolsReadyDeadline = Date.now() + 5000;
     while (Date.now() < toolsReadyDeadline) {
       const registeredCount = await evaluate(cdp, `document.modelContext?.__tools?.size ?? 0`);
-      if (registeredCount === 5) break;
+      if (registeredCount === 4) break;
       await sleep(80);
     }
-    assert.equal(await evaluate(cdp, `document.modelContext?.__tools?.size ?? 0`), 5, 'WebMCP rehearsal shim did not receive all five LINECALL tools.');
+    assert.equal(await evaluate(cdp, `document.modelContext?.__tools?.size ?? 0`), 4, 'WebMCP rehearsal shim did not receive the four pre-approval LINECALL tools.');
+    assert.equal(
+      await evaluate(cdp, `document.modelContext?.__tools?.has('linecall_apply_approved_retime') ?? false`),
+      false,
+      'Apply authority was exposed before human approval.',
+    );
     assert.match(
       await evaluate(cdp, `document.querySelector('.agent-panel__status')?.textContent.trim() ?? ''`),
-      /5 tools browser-verified/i,
-      'WebMCP browser discovery status did not reflect all five registered tools.',
+      /4 tools browser-verified/i,
+      'WebMCP browser discovery status did not reflect the four active pre-approval tools.',
     );
 
     const previewResult = await evaluate(cdp, `(async () => {
@@ -552,6 +557,22 @@ test('production build renders and behaves across real Chromium viewport states'
       /Approval is bound to this plan ID and revision/i,
       'Human approval did not become visibly bound to the exact plan.',
     );
+    const approvalCapabilityDeadline = Date.now() + 5000;
+    while (Date.now() < approvalCapabilityDeadline) {
+      const applyAvailable = await evaluate(cdp, `document.modelContext?.__tools?.has('linecall_apply_approved_retime') ?? false`);
+      if (applyAvailable) break;
+      await sleep(80);
+    }
+    assert.equal(
+      await evaluate(cdp, `document.modelContext?.__tools?.size ?? 0`),
+      5,
+      'Human approval did not expand the active WebMCP surface to five tools.',
+    );
+    assert.equal(
+      await evaluate(cdp, `document.modelContext?.__tools?.has('linecall_apply_approved_retime') ?? false`),
+      true,
+      'Human approval did not expose the exact-plan apply capability.',
+    );
 
     const applyResult = await evaluate(cdp, `(async () => {
       const tool = document.modelContext.__tools.get('linecall_apply_approved_retime');
@@ -562,6 +583,22 @@ test('production build renders and behaves across real Chromium viewport states'
     })()`, true);
     assert.equal(applyResult.status, 'applied', 'Approved WebMCP rehearsal plan was not applied.');
     assert.equal(applyResult.newRevision, 2, 'Applied WebMCP rehearsal plan did not advance schedule revision to R2.');
+    const withdrawnCapabilityDeadline = Date.now() + 5000;
+    while (Date.now() < withdrawnCapabilityDeadline) {
+      const applyAvailable = await evaluate(cdp, `document.modelContext?.__tools?.has('linecall_apply_approved_retime') ?? false`);
+      if (!applyAvailable) break;
+      await sleep(80);
+    }
+    assert.equal(
+      await evaluate(cdp, `document.modelContext?.__tools?.size ?? 0`),
+      4,
+      'One-time apply authority was not withdrawn after execution.',
+    );
+    assert.equal(
+      await evaluate(cdp, `document.modelContext?.__tools?.has('linecall_apply_approved_retime') ?? false`),
+      false,
+      'Apply capability remained exposed after the approved plan was consumed.',
+    );
     await sleep(180);
 
     const appliedUi = await evaluate(cdp, `(() => {

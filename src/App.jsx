@@ -491,7 +491,8 @@ export function App() {
   useEffect(() => registerLinecallWebMCP(
     webmcpApiRef,
     (status) => dispatch({ type: 'SET_WEBMCP_STATUS', status }),
-  ), []);
+    { allowApprovedRetime: Boolean(state.approvedPlanId) },
+  ), [state.approvedPlanId]);
 
   useEffect(() => {
     if (didPositionInitialCue.current || !state.selectedCueId) return;
