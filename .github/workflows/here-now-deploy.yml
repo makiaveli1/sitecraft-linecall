@@ -151,3 +151,62 @@ jobs:
             echo "$claim_ciphertext"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+
+          mkdir -p /tmp/linecall-receipt
+          node - "$site_url" "$state" "$persistence" "$claim_ciphertext" "$GITHUB_SHA" <<'NODE'
+          const fs = require('fs');
+          const [siteUrl, finalizeState, persistenceBeforeClaim, claimCiphertext, sourceSha] = process.argv.slice(2);
+          fs.writeFileSync('/tmp/linecall-receipt/here-now-receipt.json', JSON.stringify({
+            schemaVersion: 1,
+            siteUrl,
+            finalizeState,
+            persistenceBeforeClaim,
+            claimCiphertext,
+            sourceSha,
+            generatedAt: new Date().toISOString(),
+          }, null, 2) + '\n');
+          NODE
+
+      - name: Upload encrypted deployment receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: linecall-here-now-receipt
+          path: /tmp/linecall-receipt/here-now-receipt.json
+          retention-days: 1
+          if-no-files-found: error
+
+  record-receipt:
+    needs: deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v6
+        with:
+          ref: main
+
+      - name: Download encrypted deployment receipt
+        uses: actions/download-artifact@v5
+        with:
+          name: linecall-here-now-receipt
+          path: ${{ runner.temp }}/linecall-receipt
+
+      - name: Commit deployment receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .deployment
+          cp "$RUNNER_TEMP/linecall-receipt/here-now-receipt.json" .deployment/here-now-receipt.json
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .deployment/here-now-receipt.json
+
+          if git diff --cached --quiet; then
+            echo 'Deployment receipt already matches current main.'
+            exit 0
+          fi
+
+          git commit -m 'Record here.now deployment receipt'
+          git push origin HEAD:main
