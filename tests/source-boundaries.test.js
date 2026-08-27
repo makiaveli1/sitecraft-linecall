@@ -116,9 +116,8 @@ test('source retains cue-score language and avoids generic dashboard/card framin
     'analytics-card',
     'dashboard-grid',
     'kanban',
-    'local rehearsal',
     'local run',
-    'rehearsal fixture',
+    'rehearsal',
   ]) {
     assert.equal(combinedSource.includes(forbidden), false);
   }

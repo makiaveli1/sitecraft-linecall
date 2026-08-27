@@ -258,6 +258,8 @@ async function snapshot(cdp) {
     const score = document.querySelector('.score-panel');
     const search = document.querySelector('input[type="search"]');
     const agentPanel = document.querySelector('.agent-panel');
+    const productLead = document.querySelector('.command-header');
+    const showPulse = document.querySelector('.show-pulse');
     const decisionRail = document.querySelector('.decision-rail');
     const agentBrief = document.querySelector('.agent-brief');
     const active = document.activeElement;
@@ -291,6 +293,9 @@ async function snapshot(cdp) {
       cueRowsInsideX: [...document.querySelectorAll('.cue-row')].every((row) => fullyInsideX(row)),
       searchInsideX: fullyInsideX(search),
       agentPanelInsideX: fullyInsideX(agentPanel),
+      productLeadVisible: visible(productLead?.getBoundingClientRect() ?? null),
+      showPulseVisible: visible(showPulse?.getBoundingClientRect() ?? null),
+      agentPanelVisible: visible(agentPanel?.getBoundingClientRect() ?? null),
       decisionStepCount: decisionRail?.querySelectorAll('li').length ?? 0,
       decisionText: decisionRail?.textContent.replace(/\\s+/g, ' ').trim() ?? '',
       agentBriefVisible: !!agentBrief && getComputedStyle(agentBrief).display !== 'none',
@@ -424,8 +429,12 @@ test('production build renders and behaves across real Chromium viewport states'
       assert.match(state.agentBriefText, /Audience Q&A needs to start two seconds later/i, `${viewport.label}: judge-facing demo prompt is missing`);
       assert.equal(state.selectedCue, 'Q012', `${viewport.label}: initial selected cue drifted`);
       assert.equal(state.currentCue, 'Q012', `${viewport.label}: declared current cue drifted`);
-      assert.equal(state.selectedVisible, true, `${viewport.label}: selected current cue is outside the starting viewport`);
-      assert.equal(state.currentVisible, true, `${viewport.label}: current cue is outside the starting viewport`);
+      assert.equal(state.scroll.y, 0, `${viewport.label}: first load must preserve the judge-facing top of the cue desk`);
+      assert.equal(state.productLeadVisible, true, `${viewport.label}: product lead is missing from the first viewport`);
+      assert.equal(state.showPulseVisible, true, `${viewport.label}: live Now/Next pulse is missing from the first viewport`);
+      if (viewport.width >= 900) {
+        assert.equal(state.agentPanelVisible, true, `${viewport.label}: WebMCP collaboration story should begin in the first viewport`);
+      }
       if (viewport.width > 980) {
         assert.notEqual(state.inspectorDisplay, 'none', 'Wide view must keep the selected-cue inspector visible.');
       } else {
@@ -716,11 +725,13 @@ test('production build renders and behaves across real Chromium viewport states'
       external_requests: server.requests.filter((request) => !request.path.startsWith('/')),
     };
     report.findings = {
-      initial_selected_visibility: Object.fromEntries(Object.entries(report.cases).map(([label, entry]) => [label, {
+      initial_first_viewport: Object.fromEntries(Object.entries(report.cases).map(([label, entry]) => [label, {
+        scrollY: entry.initial.scroll.y,
+        productLeadVisible: entry.initial.productLeadVisible,
+        showPulseVisible: entry.initial.showPulseVisible,
+        agentPanelVisible: entry.initial.agentPanelVisible,
         selectedCue: entry.initial.selectedCue,
         selectedVisible: entry.initial.selectedVisible,
-        selectedRect: entry.initial.selectedRect,
-        scrollY: entry.initial.scroll.y,
       }])),
     };
     report.passed = true;

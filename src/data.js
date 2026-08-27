@@ -19,7 +19,7 @@ function cue(number, timecode, department, label, instruction, notes = '') {
 
 export const CUES = [
   cue(1, '00:00', 'stage', 'House open', 'Release doors and confirm front-of-house ready.', 'Initial audience ingress state.'),
-  cue(2, '00:02', 'audio', 'Walk-in bed', 'Bring walk-in music to rehearsal level.', 'Keep host microphones muted.'),
+  cue(2, '00:02', 'audio', 'Walk-in bed', 'Bring walk-in music to room level.', 'Keep host microphones muted.'),
   cue(3, '00:04', 'lighting', 'Room preset', 'Set audience and stage preset to the opening look.'),
   cue(4, '00:05', 'video', 'Lobby loop clear', 'Confirm house screens are on the holding frame.'),
   cue(5, '00:08', 'stage', 'Speaker standby A', 'Place first speaker at stage-left standby.'),
@@ -29,7 +29,7 @@ export const CUES = [
   cue(9, '00:12', 'stage', 'Doors closed', 'Confirm late-entry path and clear stage access.'),
   cue(10, '00:13', 'audio', 'Walk-in bed fade', 'Fade walk-in bed to zero on show call.'),
   cue(11, '00:14', 'lighting', 'House out standby', 'Stand by house out and stage opening look.'),
-  cue(12, '00:15', 'stage', 'Host walk-on', 'Call host from stage left and confirm clear deck.', 'Current rehearsal cue.'),
+  cue(12, '00:15', 'stage', 'Host walk-on', 'Call host from stage left and confirm clear deck.', 'Current live cue.'),
   cue(13, '00:15', 'audio', 'Host mic live', 'Open host microphone when host reaches mark.'),
   { ...cue(14, '00:15', 'lighting', 'Opening look', 'Take house out and bring opening stage look to full.'), locked: true },
   cue(15, '00:16', 'video', 'Opening ident play', 'Roll ident and take programme output on first frame.'),

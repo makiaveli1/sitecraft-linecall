@@ -390,7 +390,6 @@ export function App() {
   const inspectorHeadingRef = useRef(null);
   const scoreHeadingRef = useRef(null);
   const shouldFocusInspector = useRef(false);
-  const didPositionInitialCue = useRef(false);
 
   stateRef.current = state;
 
@@ -504,19 +503,6 @@ export function App() {
     (status) => dispatch({ type: 'SET_WEBMCP_STATUS', status }),
     { allowApprovedRetime: Boolean(state.approvedPlanId) },
   ), [state.approvedPlanId]);
-
-  useEffect(() => {
-    if (didPositionInitialCue.current || !state.selectedCueId) return;
-    didPositionInitialCue.current = true;
-    if (window.scrollY > 1) return;
-    const selectedButton = cueButtons.current.get(state.selectedCueId);
-    if (!selectedButton) return;
-    const rect = selectedButton.getBoundingClientRect();
-    const outsideViewport = rect.bottom <= 0 || rect.top >= window.innerHeight;
-    if (outsideViewport) {
-      selectedButton.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'auto' });
-    }
-  }, [state.selectedCueId]);
 
   useEffect(() => {
     if (state.detailOpen && shouldFocusInspector.current) {
