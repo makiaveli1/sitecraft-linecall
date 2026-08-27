@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useReducer, useRef } from 'react';
 
 import { CUES, SHOW_META } from './data.js';
-import { compareRetimeStrategies, createRunSnapshot, previewSegmentRetime } from './schedule.js';
+import { ProductLead, ShowPulse } from './presentation.jsx';
+import { SEGMENTS, compareRetimeStrategies, createRunSnapshot, previewSegmentRetime } from './schedule.js';
 import {
   DEPARTMENTS,
   appReducer,
@@ -45,6 +46,7 @@ function CueRow({
   cue,
   readiness,
   selected,
+  segmentLabel,
   onSelect,
   onMove,
   onQuickReadiness,
@@ -52,7 +54,7 @@ function CueRow({
 }) {
   return (
     <li
-      className={`cue-row ${selected ? 'cue-row--selected' : ''} cue-row--${cue.runState}`}
+      className={`cue-row ${selected ? 'cue-row--selected' : ''} ${segmentLabel ? 'cue-row--segment-start' : ''} cue-row--${cue.runState}`}
       data-department={cue.department}
     >
       <span className="cue-rail" aria-hidden="true" />
@@ -70,6 +72,7 @@ function CueRow({
           {cue.timecode}
         </time>
         <span className="cue-copy">
+          {segmentLabel ? <span className="cue-segment-label">{segmentLabel}</span> : null}
           <span className="cue-label">{cue.label}</span>
           <span className="cue-instruction">{cue.instruction}</span>
           {cue.locked ? <span className="cue-lock-note">Human lock</span> : null}
@@ -95,9 +98,9 @@ function CueInspector({ cue, readiness, onReadiness, onToggleLock, onClose, head
   if (unavailable) {
     return (
       <aside className="inspector inspector--empty" aria-label="Cue detail unavailable">
-        <p className="eyebrow">Cue inspector</p>
-        <h2>Fixture unavailable</h2>
-        <p>Restore the local test data before relying on cue detail or readiness controls.</p>
+        <p className="eyebrow">Cue detail</p>
+        <h2>Run data unavailable</h2>
+        <p>Restore the demo run before relying on cue detail or readiness controls.</p>
       </aside>
     );
   }
@@ -105,9 +108,9 @@ function CueInspector({ cue, readiness, onReadiness, onToggleLock, onClose, head
   if (!cue) {
     return (
       <aside className="inspector inspector--empty" aria-label="Cue detail">
-        <p className="eyebrow">Cue inspector</p>
-        <h2>No cue selected</h2>
-        <p>Select a visible cue to review its instruction and readiness.</p>
+        <p className="eyebrow">Cue detail</p>
+        <h2>Select a cue</h2>
+        <p>Open any cue to inspect its call, department, readiness, and human lock state.</p>
       </aside>
     );
   }
@@ -202,9 +205,12 @@ function AgentCollaborationPanel({
   return (
     <section className="agent-panel" aria-labelledby="agent-panel-title">
       <div className="agent-panel__heading">
-        <div>
-          <p className="eyebrow">Human + agent control plane</p>
-          <h2 id="agent-panel-title">WebMCP collaboration</h2>
+        <div className="agent-panel__title-copy">
+          <p className="eyebrow">Your intelligent second caller</p>
+          <h2 id="agent-panel-title">Ask LINECALL to solve the timing</h2>
+          <p className="agent-panel__lede">
+            Describe the problem in the browser chat. LINECALL reads the run, compares safe options, and shows the exact cue changes before anything moves.
+          </p>
         </div>
         <div className="agent-panel__status" data-status={webmcp.status}>
           <span aria-hidden="true" />
@@ -219,19 +225,19 @@ function AgentCollaborationPanel({
         </div>
         <div>
           <span className="eyebrow">Agent authority</span>
-          <strong>Preview first</strong>
+          <strong>Inspect · compare · preview</strong>
         </div>
         <div>
           <span className="eyebrow">Human boundary</span>
-          <strong>Locks + exact approval</strong>
+          <strong>Locks + exact timing approval</strong>
         </div>
         <div>
-          <span className="eyebrow">Browser proof</span>
+          <span className="eyebrow">WebMCP proof</span>
           <strong>
             {webmcp.browserVerified
               ? `Discovered ${webmcp.discoveredToolCount}/${webmcp.toolCount}`
               : webmcp.status === 'registered'
-                ? 'Registration only'
+                ? 'Tools registered'
                 : 'Pending'}
           </strong>
         </div>
@@ -240,7 +246,7 @@ function AgentCollaborationPanel({
       <ol className="decision-rail" aria-label="LINECALL timing authority path">
         <li>
           <span aria-hidden="true">1</span>
-          <div><strong>Agent compares</strong><small>Counterfactual options</small></div>
+          <div><strong>Agent compares</strong><small>Counterfactual timing options</small></div>
         </li>
         <li>
           <span aria-hidden="true">2</span>
@@ -248,11 +254,11 @@ function AgentCollaborationPanel({
         </li>
         <li>
           <span aria-hidden="true">3</span>
-          <div><strong>Human approves</strong><small>Exact plan + revision</small></div>
+          <div><strong>Human approves</strong><small>Exact plan + schedule revision</small></div>
         </li>
         <li>
           <span aria-hidden="true">4</span>
-          <div><strong>Agent applies</strong><small>Once, with receipt</small></div>
+          <div><strong>Agent applies once</strong><small>Revision advances; apply capability closes</small></div>
         </li>
       </ol>
 
@@ -260,7 +266,7 @@ function AgentCollaborationPanel({
         <section className="strategy-comparison" aria-labelledby="strategy-comparison-title">
           <div className="strategy-comparison__heading">
             <div>
-              <p className="eyebrow">Deterministic decision trace</p>
+              <p className="eyebrow">Decision trace · deterministic rules</p>
               <h3 id="strategy-comparison-title">Two timing strategies checked</h3>
             </div>
             <span className={`strategy-verdict strategy-verdict--${comparison.status}`}>
@@ -349,12 +355,17 @@ function AgentCollaborationPanel({
       ) : (
         <div className="agent-brief">
           <div className="agent-brief__copy">
-            <p className="eyebrow">Operator brief</p>
-            <strong>Give the agent a real timing problem, not a button to click.</strong>
-            <span>It can inspect the run, compare alternatives, and prepare an exact plan. Timing still cannot move until you approve it.</span>
+            <p className="eyebrow">Try it now</p>
+            <strong>Tell LINECALL what changed in the show.</strong>
+            <span>Use normal language in the browser chat. LINECALL will reason over this exact run and stop before consequential timing moves.</span>
+          </div>
+          <div className="agent-brief__steps" aria-label="How to use LINECALL with an agent">
+            <div><span>01</span><strong>Ask</strong><small>Describe the timing problem.</small></div>
+            <div><span>02</span><strong>Review</strong><small>See safe options and exact cue changes.</small></div>
+            <div><span>03</span><strong>Approve</strong><small>Open a one-time apply window only if the plan is right.</small></div>
           </div>
           <blockquote>
-            “Audience Q&amp;A needs to start two seconds later. Find the safest way to absorb the delay without breaking the run, and show me the exact change first.”
+            “Audience Q&amp;A needs to start two seconds later. Find the safest way to absorb the delay without breaking the run, and show me the exact change before anything moves.”
           </blockquote>
         </div>
       )}
@@ -562,46 +573,19 @@ export function App() {
 
   return (
     <div className={`app-shell ${state.detailOpen ? 'app-shell--detail-open' : ''} ${state.hold ? 'app-shell--hold' : ''}`}>
-      <header className="app-header">
-        <div className="brand-block">
-          <span className="brand-mark" aria-hidden="true">LC</span>
-          <div>
-            <p className="eyebrow">{SHOW_META.mode}</p>
-            <h1>LINECALL</h1>
-          </div>
-        </div>
-        <div className="show-identity">
-          <strong>{SHOW_META.title}</strong>
-          <span>{SHOW_META.room}</span>
-        </div>
-        <button
-          className={`hold-control ${state.hold ? 'hold-control--active' : ''}`}
-          type="button"
-          onClick={() => dispatch({ type: 'TOGGLE_HOLD' })}
-        >
-          <span className="hold-control__state">{state.hold ? 'HOLD' : 'RUN'}</span>
-          <span>{state.hold ? 'Resume run' : 'Place run on hold'}</span>
-        </button>
-      </header>
+      <ProductLead
+        showMeta={SHOW_META}
+        revision={state.revision}
+        hold={state.hold}
+        onToggleHold={() => dispatch({ type: 'TOGGLE_HOLD' })}
+      />
 
-      <section className={`run-strip ${state.hold ? 'run-strip--hold' : ''}`} aria-label="Run status">
-        <div className="run-strip__mode">
-          <span className="eyebrow">Run status</span>
-          <strong>{state.hold ? 'Run held' : 'Run active'}</strong>
-        </div>
-        <div className="run-context">
-          <div>
-            <span className="eyebrow">Now</span>
-            <strong>Q{sequence.current ? cueNumber(sequence.current) : '—'}</strong>
-            <span>{sequence.current?.label ?? 'No current cue'}</span>
-          </div>
-          <div>
-            <span className="eyebrow">Next</span>
-            <strong>Q{sequence.next ? cueNumber(sequence.next) : '—'}</strong>
-            <span>{sequence.next?.label ?? 'No next cue'}</span>
-          </div>
-        </div>
-      </section>
+      <ShowPulse
+        schedule={state.schedule}
+        sequence={sequence}
+        revision={state.revision}
+        hold={state.hold}
+      />
 
       <AgentCollaborationPanel
         webmcp={state.webmcp}
@@ -663,15 +647,15 @@ export function App() {
 
           {state.dataState === 'error' ? (
             <section className="fixture-error" role="alert" aria-labelledby="fixture-error-title">
-              <p className="eyebrow">Local fixture error</p>
+              <p className="eyebrow">Demo data fault</p>
               <h3 id="fixture-error-title">Cue data is temporarily unavailable</h3>
-              <p>This is a deliberate local test state. No production service or network request failed.</p>
+              <p>A simulated fault is active. The run timing and operator locks have not changed.</p>
               <div className="button-row">
                 <button type="button" onClick={recoverFixtureData}>
-                  Restore fixture data
+                  Restore run data
                 </button>
                 <button type="button" className="button-secondary" onClick={resetFixture}>
-                  Reset fixture
+                  Reset demo run
                 </button>
               </div>
             </section>
@@ -686,20 +670,28 @@ export function App() {
             </section>
           ) : (
             <ol className="cue-score" id="cue-score" aria-label="Chronological cue score">
-              {visibleCues.map((cue) => (
-                <CueRow
-                  key={cue.id}
-                  cue={cue}
-                  readiness={state.readiness[cue.id]}
-                  selected={cue.id === state.selectedCueId}
-                  registerButton={registerCueButton}
-                  onSelect={(event) => selectCue(cue.id, event)}
-                  onMove={(event) => moveCueSelection(event, cue.id)}
-                  onQuickReadiness={() =>
-                    updateReadiness(cue.id, readinessNext(state.readiness[cue.id]))
-                  }
-                />
-              ))}
+              {visibleCues.map((cue, index) => {
+                const previousCue = visibleCues[index - 1];
+                const segmentLabel = index === 0 || previousCue?.segment !== cue.segment
+                  ? SEGMENTS.find((segment) => segment.id === cue.segment)?.label ?? cue.segment
+                  : '';
+
+                return (
+                  <CueRow
+                    key={cue.id}
+                    cue={cue}
+                    readiness={state.readiness[cue.id]}
+                    selected={cue.id === state.selectedCueId}
+                    segmentLabel={segmentLabel}
+                    registerButton={registerCueButton}
+                    onSelect={(event) => selectCue(cue.id, event)}
+                    onMove={(event) => moveCueSelection(event, cue.id)}
+                    onQuickReadiness={() =>
+                      updateReadiness(cue.id, readinessNext(state.readiness[cue.id]))
+                    }
+                  />
+                );
+              })}
             </ol>
           )}
         </section>
@@ -717,14 +709,14 @@ export function App() {
 
       <footer className="fixture-footer">
         <details>
-          <summary>Forward-test fixture tools</summary>
-          <p>These controls exist only to test recovery and reset states. They do not represent production actions.</p>
+          <summary>Demo resilience controls</summary>
+          <p>Exercise recovery states without changing the run timing, revision, or operator locks.</p>
           <div className="button-row">
             <button type="button" onClick={() => dispatch({ type: 'SIMULATE_ERROR' })}>
-              Simulate data error
+              Simulate data fault
             </button>
             <button type="button" className="button-secondary" onClick={resetFixture}>
-              Reset fixture
+              Reset demo run
             </button>
           </div>
         </details>

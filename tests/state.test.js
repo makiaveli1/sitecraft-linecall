@@ -133,5 +133,5 @@ test('simulated error recovers and reset restores canonical initial state', () =
   const { announcement: resetAnnouncement, ...resetComparable } = reset;
 
   assert.deepEqual(resetComparable, initialComparable);
-  assert.equal(resetAnnouncement, 'LINECALL fixture reset to its initial state.');
+  assert.equal(resetAnnouncement, 'LINECALL demo run reset to its initial state.');
 });

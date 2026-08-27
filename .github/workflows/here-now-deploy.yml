@@ -40,8 +40,8 @@ jobs:
 
           const expected = new Map([
             ['index.html', 1306],
-            ['assets/index-Bo115f6O.css', 22714],
-            ['assets/index-DVG7vk3R.js', 229672],
+            ['assets/index-WNg5Kv5S.css', 40976],
+            ['assets/index-eRxaLGJd.js', 233293],
           ]);
 
           const found = [];
@@ -90,8 +90,8 @@ jobs:
             "spaMode": true,
             "files": [
               {"path":"index.html","size":1306,"contentType":"text/html; charset=utf-8"},
-              {"path":"assets/index-Bo115f6O.css","size":22714,"contentType":"text/css; charset=utf-8"},
-              {"path":"assets/index-DVG7vk3R.js","size":229672,"contentType":"text/javascript; charset=utf-8"}
+              {"path":"assets/index-WNg5Kv5S.css","size":40976,"contentType":"text/css; charset=utf-8"},
+              {"path":"assets/index-eRxaLGJd.js","size":233293,"contentType":"text/javascript; charset=utf-8"}
             ]
           }
           JSON
@@ -114,8 +114,8 @@ jobs:
               --data-binary "@dist/$rel" >/dev/null
           done <<'FILES'
           index.html|text/html; charset=utf-8
-          assets/index-Bo115f6O.css|text/css; charset=utf-8
-          assets/index-DVG7vk3R.js|text/javascript; charset=utf-8
+          assets/index-WNg5Kv5S.css|text/css; charset=utf-8
+          assets/index-eRxaLGJd.js|text/javascript; charset=utf-8
           FILES
 
           finalize_json="$(curl -fsS -X POST "$finalize_url" \

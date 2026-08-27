@@ -218,27 +218,27 @@ export function appReducer(state, action) {
         ...state,
         hold: !state.hold,
         announcement: state.hold
-          ? 'Local rehearsal run resumed.'
-          : 'Local rehearsal run placed on hold.',
+          ? 'Run resumed.'
+          : 'Run placed on hold.',
       };
     case 'SIMULATE_ERROR':
       return {
         ...state,
         dataState: 'error',
         detailOpen: false,
-        announcement: 'Fixture data error simulated.',
+        announcement: 'Demo data fault simulated.',
       };
     case 'RECOVER_DATA':
       return {
         ...state,
         dataState: 'ready',
-        announcement: 'Fixture data restored.',
+        announcement: 'Run data restored.',
       };
     case 'RESET':
       return {
         ...action.initialState,
         webmcp: state.webmcp,
-        announcement: 'LINECALL fixture reset to its initial state.',
+        announcement: 'LINECALL demo run reset to its initial state.',
       };
     default:
       return state;
