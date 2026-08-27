@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "siteUrl": "https://distant-quarry-p6h2.here.now/",
+  "siteUrl": "https://starry-signal-y2ey.here.now/",
   "finalizeState": "live",
   "persistenceBeforeClaim": "expiring",
-  "claimCiphertext": "knh9JKndibiy0UWprvfaPgZf6rFzMsrvEcYpxmtYNgSxar2aXXCaHH3hfBXC3BdAbNRuzGp9U1IsGq9bgE5iK0ps4hY0NvXhmY+85egWE6M+J5z5Y4rRBnGVPcs3lpbK/8HyopVkzmrZbLCGhWS0c6CrqFhj6pbPJk97MDRuGOooEqriN9jDIGDHjgCnTF1AKdQdhSAhB/aC7oWEtZJXeG8IN1bB4IkmsONoVu8fZccYaT5qRc7D/uLYnO2rCgzbIw/t1DTtGtWuz7Aa5RtpNMMZVUqb6l9VEUOpktxkcqloCAueoAQnWABhxxKwpVxJr7XqZQKK+0ZXgLPoC8jVLA==",
-  "sourceSha": "909ba2461c60cf8e732629e4394197d0d989e48f",
-  "generatedAt": "2026-08-27T15:13:00.410Z"
+  "claimCiphertext": "CX16Z6I0nm8pyvWgiSLP25dXZsDjHiRqbslzDujO/Am/5oTjltfZ4BtnaXOGH3XVl8YwbUDX39GykM6GkyixKIT8mwfVxNCyK/ix6ZyoUiX/Ac1Nn0TLx64Tx/ci8mVoxHv8NSXjVhmpxkl/GJyWjRUphgHjuaaezXLbkFqTPion+QCEz+kzgU6Qja+BIOG//bbH4Jpj2q9RxsgAnnjehbScc2nHZECrQ5IJLPuBd+TcmDYA2T2As1THGlKKC94Oj2/Ib4enrYG+vTROw90wwULcu7n6yt8EE0HI2000DnbcI2po4H5twhOzQDyg6wqpRGrurvZ8inWEoLNOSw5nPw==",
+  "sourceSha": "58dc8dd5f4d2a5ad678669f387f9ed6ce7e1fafa",
+  "generatedAt": "2026-08-27T15:59:37.338Z"
 }
