@@ -49,13 +49,21 @@ test('declared dependency surface stays intentionally small and reproducible', (
   for (const required of [
     '"spaMode": true',
     "['index.html', 1366]",
-    "['assets/index-CzvmbhIJ.css', 88503]",
-    "['assets/index-BjQP2phe.js', 254464]",
+    "['assets/index-Biwm6Odh.css', 107291]",
+    "['assets/index-DGhrTz8S.js', 263058]",
     "['linecall-authority-keyart.svg', 5587]",
     'linecall-authority-keyart.svg|image/svg+xml',
+    'HERENOW_API_KEY: ${{ secrets.HERENOW_API_KEY }}',
+    'LINECALL_SITE_SLUG: grassy-lotus-7dr8',
+    'https://here.now/api/v1/publish/${LINECALL_SITE_SLUG}',
+    'if [[ "$persistence" != "permanent" ]]; then',
+    "deploymentMode: 'owned-update'",
+    'Refusing to create a replacement anonymous site.',
   ]) {
-    assert.ok(hereNowWorkflowSource.includes(required), `Missing exact here.now multi-route bundle contract: ${required}`);
+    assert.ok(hereNowWorkflowSource.includes(required), `Missing exact here.now claimed-site contract: ${required}`);
   }
+  assert.equal(hereNowWorkflowSource.includes('claimCiphertext'), false, 'Claimed-site updates must not mint or encrypt another claim URL');
+  assert.equal(hereNowWorkflowSource.includes('CLAIM_PUBLIC_KEY_B64'), false, 'Claimed-site updates must not depend on the old anonymous-claim key');
 
   const forbiddenPackages = [
     'react-router',
@@ -110,13 +118,17 @@ test('site visual assets stay controlled, licensed, base-aware, and bounded', ()
   );
 
   const remoteMediaUrls = [...cssSource.matchAll(/https:\/\/images\.unsplash\.com\/[^\")]+/g)].map((match) => match[0]);
-  assert.equal(remoteMediaUrls.length, 4, 'Homepage should use only the two approved Unsplash photographs across responsive/background variants.');
-  for (const url of remoteMediaUrls) {
-    assert.ok(
-      url.includes('photo-1761618291331-535983ae4296') || url.includes('photo-1709731192032-5b67e7f7f4c5'),
-      `Unexpected remote media URL: ${url}`,
-    );
-  }
+  assert.equal(remoteMediaUrls.length, 6, 'The site should use only the three approved photographs across responsive/background variants.');
+  const approvedPhotoIds = [
+    'photo-1761618291331-535983ae4296',
+    'photo-1709731192032-5b67e7f7f4c5',
+    'photo-1786155458201-9554cdde897e',
+  ];
+  assert.deepEqual(
+    [...new Set(remoteMediaUrls.map((url) => approvedPhotoIds.find((id) => url.includes(id)) || 'UNAPPROVED'))].sort(),
+    [...approvedPhotoIds].sort(),
+    'Remote photography must stay inside the explicit three-image LINECALL allowlist',
+  );
   assert.equal(combinedSource.includes('webgl'), false);
   assert.equal(combinedSource.includes('three.js'), false);
 });
@@ -163,6 +175,10 @@ test('site architecture is route-based instead of one long-scroll page', () => {
   assert.ok(siteSource.includes('Three ways into the run.'));
   assert.ok(siteSource.includes('className="pressure-chain"'));
   assert.ok(siteSource.includes('className="hero-live-card"'));
+  assert.ok(siteSource.includes('className="product-lab__instrument"'), 'Product route must retain its timing-laboratory instrument');
+  assert.ok(siteSource.includes('className="demo-scenario demo-scenario--briefing"'), 'Live desk must retain its control-room mission briefing');
+  assert.ok(siteSource.includes('className="trust-vault__cycle"'), 'Trust route must retain its 4→5→4 permission-vault opening');
+  assert.ok(siteSource.includes('className="proof-ledger"'), 'Trust route must retain its executable proof ledger');
 
   assert.ok(appSource.includes("pathname === '/demo'"), 'The full cue desk must render only on the dedicated demo route');
   assert.ok(appSource.includes("pathname === '/product'"));

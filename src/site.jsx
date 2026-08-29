@@ -217,29 +217,67 @@ function ProductRunVisual({ sequence, revision }) {
 export function ProductPage({ sequence, revision }) {
   return (
     <>
-      <section className="page-masthead page-masthead--product" aria-labelledby="product-title">
-        <p className="site-kicker">Product</p>
-        <h1 id="product-title">A second caller for the timing problem, not the show.</h1>
-        <p>
-          LINECALL combines one authoritative run, a constrained agent toolset, and deterministic scheduling rules so a producer can explore timing changes without handing the model final authority.
-        </p>
+      <section className="page-masthead page-masthead--product product-lab" aria-labelledby="product-title">
+        <div className="product-lab__copy">
+          <p className="site-kicker">Product / timing laboratory</p>
+          <h1 id="product-title">A second caller for the timing problem, not the show.</h1>
+          <p>
+            LINECALL combines one authoritative run, a constrained agent toolset, and deterministic scheduling rules so a producer can explore timing changes without handing the model final authority.
+          </p>
+          <div className="product-lab__legend" aria-label="LINECALL product model">
+            <span><i aria-hidden="true" /> Observe one run</span>
+            <span><i aria-hidden="true" /> Branch safe futures</span>
+            <span><i aria-hidden="true" /> Approve one revision</span>
+          </div>
+        </div>
+
+        <aside className="product-lab__instrument" aria-label="Current LINECALL timing field">
+          <div className="product-lab__instrument-top">
+            <span>AUTHORITATIVE RUN</span>
+            <b>R{revision}</b>
+          </div>
+          <div className="product-lab__current">
+            <span>NOW</span>
+            <strong>Q{cueNumber(sequence?.current)}</strong>
+            <div><b>{sequence?.current?.label}</b><small>{sequence?.current?.instruction}</small></div>
+          </div>
+          <div className="product-lab__trace" aria-hidden="true">
+            <svg viewBox="0 0 800 230" preserveAspectRatio="none">
+              <path className="trace trace--base" d="M0 162 C104 160 128 121 220 125 S352 188 448 142 S612 70 800 89" />
+              <path className="trace trace--safe" d="M0 162 C102 159 130 118 220 123 S350 181 447 136 S612 55 800 69" />
+              <path className="trace trace--blocked" d="M0 162 C102 159 130 118 220 123 S346 208 438 202 S610 186 800 214" />
+              <circle cx="220" cy="123" r="7" />
+              <circle cx="447" cy="136" r="7" />
+              <circle cx="800" cy="69" r="7" />
+            </svg>
+            <div className="product-lab__trace-labels"><span>Current run</span><span>Safe ripple</span><span>Blocked future</span></div>
+          </div>
+          <div className="product-lab__instrument-foot">
+            <span>ONE SOURCE OF TRUTH</span>
+            <span>COUNTERFACTUALS BEFORE MUTATION</span>
+          </div>
+        </aside>
       </section>
 
-      <section className="product-chapter product-chapter--run" aria-labelledby="run-chapter-title">
+      <section className="product-chapter product-chapter--run product-chapter--score" aria-labelledby="run-chapter-title">
         <div className="product-chapter__copy">
           <span className="chapter-index">01 / THE RUN</span>
           <h2 id="run-chapter-title">The agent starts from the same live state as the operator.</h2>
           <p>Current cue, next cue, human locks, readiness, segment boundaries, hard out, and revision all come from one run snapshot. No shadow version of the schedule exists.</p>
+          <div className="product-chapter__microfacts" aria-label="Run snapshot contents">
+            <span>Current + next</span><span>Locks</span><span>Readiness</span><span>Hard out</span><span>Revision</span>
+          </div>
         </div>
         <ProductRunVisual sequence={sequence} revision={revision} />
       </section>
 
-      <section className="product-chapter product-chapter--reason" aria-labelledby="reason-chapter-title">
+      <section className="product-chapter product-chapter--reason product-chapter--branch" aria-labelledby="reason-chapter-title">
         <div className="product-chapter__visual">
           <div className="counterfactual-board">
-            <div className="counterfactual-board__request">Q&amp;A +2s</div>
+            <div className="counterfactual-board__request"><small>WHAT IF</small> Q&amp;A +2s</div>
             <div className="counterfactual-board__option is-blocked"><span>SEGMENT ONLY</span><b>Blocked</b><small>chronology breaks</small></div>
             <div className="counterfactual-board__option is-ready"><span>RIPPLE AFTER</span><b>Safe</b><small>13 exact cue changes</small></div>
+            <div className="counterfactual-board__impact" aria-label="Downstream impact summary"><span>+2s request</span><i aria-hidden="true">→</i><span>13 cues</span><i aria-hidden="true">→</i><strong>safe future</strong></div>
             <div className="counterfactual-board__result"><i aria-hidden="true" /> Recommend safe ripple</div>
           </div>
         </div>
@@ -247,24 +285,30 @@ export function ProductPage({ sequence, revision }) {
           <span className="chapter-index">02 / THE REASONING</span>
           <h2 id="reason-chapter-title">Compare futures before the run becomes one of them.</h2>
           <p>The agent can ask LINECALL to evaluate alternative timing strategies. The application calculates the consequences and rejects plans that violate chronology, locks, spacing, stale revisions, or hard out.</p>
+          <div className="product-rules" aria-label="Deterministic rule checks">
+            <span>Chronology</span><span>Human locks</span><span>Spacing</span><span>Fresh revision</span><span>Hard out</span>
+          </div>
         </div>
       </section>
 
-      <section className="product-chapter product-chapter--authority" aria-labelledby="authority-chapter-title">
+      <section className="product-chapter product-chapter--authority product-chapter--gate" aria-labelledby="authority-chapter-title">
         <div className="product-chapter__copy">
           <span className="chapter-index">03 / THE DECISION</span>
           <h2 id="authority-chapter-title">Consequential authority appears only after a human approves one exact plan.</h2>
           <p>The apply tool is absent while the agent explores. Approval binds one visible plan to one revision. The capability opens, applies once, advances the revision, leaves a receipt, and closes again.</p>
+          <div className="product-gate-sequence" aria-label="One-time execution sequence">
+            <span><b>4</b><small>inspect</small></span><i aria-hidden="true">→</i><span className="is-human"><b>YOU</b><small>approve</small></span><i aria-hidden="true">→</i><span><b>5</b><small>apply once</small></span><i aria-hidden="true">→</i><span><b>4</b><small>closed</small></span>
+          </div>
           <ArrowLink href="/trust">Inspect the trust boundary</ArrowLink>
         </div>
-        <figure className="authority-art">
+        <figure className="authority-art authority-art--product">
           <img src={assetHref('linecall-authority-keyart.svg')} alt="Diagram of the LINECALL four tools to five tools to four tools human approval lifecycle" />
         </figure>
       </section>
 
-      <section className="product-cta">
-        <p>Enough explanation.</p>
-        <h2>Put two seconds of pressure on the real desk.</h2>
+      <section className="product-cta product-cta--lab">
+        <p>Leave the laboratory.</p>
+        <div><span>R{revision} · LIVE SCENARIO</span><h2>Put two seconds of pressure on the real desk.</h2></div>
         <a className="site-button" href={routeHref('/demo')}>Run the live scenario</a>
       </section>
     </>
@@ -273,16 +317,28 @@ export function ProductPage({ sequence, revision }) {
 
 export function DemoHero({ revision }) {
   return (
-    <section className="demo-masthead" aria-labelledby="live-demo-title">
-      <div>
-        <p className="site-kicker">Live desk</p>
+    <section className="demo-masthead demo-masthead--control-room" aria-labelledby="live-demo-title">
+      <div className="demo-masthead__copy">
+        <p className="site-kicker">Live desk / control room</p>
         <h1 id="live-demo-title">This is the actual LINECALL product.</h1>
         <p>Operate the cue score directly, or ask a WebMCP-aware agent to inspect and solve the run. Nothing below is a marketing mockup.</p>
+        <div className="demo-live-status" aria-label="Live desk status">
+          <span><i aria-hidden="true" /> LIVE RUN</span>
+          <span>R{revision}</span>
+          <span>32 CUES</span>
+          <span>HUMAN AUTHORITY ON</span>
+        </div>
       </div>
-      <div className="demo-scenario" aria-label="Recommended LINECALL demo scenario">
-        <span>RECOMMENDED SCENARIO · R{revision}</span>
+
+      <aside className="demo-scenario demo-scenario--briefing" aria-label="Recommended LINECALL demo scenario">
+        <div className="demo-scenario__top"><span>MISSION BRIEF · R{revision}</span><b>02 SEC DELAY</b></div>
         <p>“Audience Q&amp;A needs to start two seconds later. Find the safest way to absorb that delay and show me the exact change before anything moves.”</p>
-      </div>
+        <div className="demo-scenario__path" aria-label="Expected authority path">
+          <span>Inspect</span><i aria-hidden="true">→</i><span>Compare</span><i aria-hidden="true">→</i><span>Preview</span><i aria-hidden="true">→</i><strong>Human decides</strong>
+        </div>
+      </aside>
+
+      <div className="demo-masthead__edge" aria-hidden="true">CONTROL ROOM / WEBMCP NATIVE / LIVE STATE</div>
     </section>
   );
 }
@@ -290,24 +346,44 @@ export function DemoHero({ revision }) {
 export function TrustPage({ webmcp, cueCount }) {
   return (
     <>
-      <section className="page-masthead page-masthead--trust" aria-labelledby="trust-title">
-        <p className="site-kicker">Trust + proof</p>
-        <h1 id="trust-title">Useful because the agent cannot quietly become the operator.</h1>
-        <p>LINECALL narrows model authority at the product boundary. Tool availability changes with human state, deterministic rules own scheduling safety, and every consequential apply is bound to an exact revision and plan.</p>
+      <section className="page-masthead page-masthead--trust trust-vault" aria-labelledby="trust-title">
+        <div className="trust-vault__copy">
+          <p className="site-kicker">Trust + proof / authority vault</p>
+          <h1 id="trust-title">Useful because the agent cannot quietly become the operator.</h1>
+          <p>LINECALL narrows model authority at the product boundary. Tool availability changes with human state, deterministic rules own scheduling safety, and every consequential apply is bound to an exact revision and plan.</p>
+        </div>
+        <div className="trust-vault__cycle" aria-label="LINECALL permission lifecycle">
+          <span className="trust-vault__node"><b>4</b><small>observe</small></span>
+          <i aria-hidden="true">→</i>
+          <span className="trust-vault__human"><b>YOU</b><small>approve one exact plan</small></span>
+          <i aria-hidden="true">→</i>
+          <span className="trust-vault__node is-open"><b>5</b><small>apply once</small></span>
+          <i aria-hidden="true">→</i>
+          <span className="trust-vault__node"><b>4</b><small>closed again</small></span>
+        </div>
+        <div className="trust-vault__status" aria-label="Trust status summary">
+          <span>DETERMINISTIC RULES</span><span>HUMAN APPROVAL</span><span>ONE-TIME EXECUTION</span><span>VISIBLE RECEIPT</span>
+        </div>
       </section>
 
-      <section className="trust-art-section" aria-labelledby="lifecycle-title">
+      <section className="trust-art-section trust-art-section--ledger" aria-labelledby="lifecycle-title">
         <div className="trust-art-section__copy">
           <span className="chapter-index">THE AUTHORITY LIFECYCLE</span>
           <h2 id="lifecycle-title">4 → 5 → 4 is a permission story, not a visual effect.</h2>
           <p>Four tools are available for inspection, comparison, preview, and readiness. The fifth exists only while one exact human-approved plan remains valid.</p>
+          <div className="trust-chain" aria-label="Authority chain of custody">
+            <div><b>01</b><span><strong>Observe</strong><small>Read the exact run and revision</small></span></div>
+            <div><b>02</b><span><strong>Propose</strong><small>Compare and preview without mutation</small></span></div>
+            <div><b>03</b><span><strong>Authorize</strong><small>Human binds one visible plan</small></span></div>
+            <div><b>04</b><span><strong>Record</strong><small>Apply once, advance revision, leave receipt</small></span></div>
+          </div>
         </div>
-        <figure className="authority-art authority-art--wide">
+        <figure className="authority-art authority-art--wide authority-art--vault">
           <img src={assetHref('linecall-authority-keyart.svg')} alt="LINECALL authority lifecycle showing four tools, human approval opening a fifth tool, then returning to four" />
         </figure>
       </section>
 
-      <section className="authority-grid authority-grid--page" aria-label="LINECALL agent authority boundaries">
+      <section className="authority-grid authority-grid--page authority-grid--vault" aria-label="LINECALL agent authority boundaries">
         <article className="authority-grid__can">
           <p className="authority-grid__label">Agent can</p>
           <ul>
@@ -318,6 +394,7 @@ export function TrustPage({ webmcp, cueCount }) {
             <li>Apply one exact plan after human approval</li>
           </ul>
         </article>
+        <div className="authority-grid__seal" aria-hidden="true"><span>HUMAN</span><b>FINAL</b><span>AUTHORITY</span></div>
         <article className="authority-grid__cannot">
           <p className="authority-grid__label">Agent cannot</p>
           <ul>
@@ -330,17 +407,23 @@ export function TrustPage({ webmcp, cueCount }) {
         </article>
       </section>
 
-      <section className="proof-page" aria-labelledby="proof-title">
+      <section className="proof-page proof-page--vault" aria-labelledby="proof-title">
         <div className="proof-page__headline">
           <p className="site-kicker">Executable evidence</p>
           <h2 id="proof-title">The claim is tested from source to browser.</h2>
           <p>The attended native WebMCP proof is separate from the deterministic application test suite, so browser-native evidence is never silently replaced by a shim.</p>
         </div>
-        <div className="proof-grid proof-grid--page">
-          <article><strong>30</strong><span>source + Chromium tests in the current release suite</span></article>
-          <article><strong>7 evals</strong><span>tool choice, ordering, negative cases, trust boundaries, and mutation</span></article>
-          <article><strong>{cueCount}</strong><span>stateful cues with locks, readiness, revisions, and receipts</span></article>
-          <article><strong>{webmcpStatusLabel(webmcp)}</strong><span>current browser WebMCP registration status</span></article>
+        <div className="proof-grid proof-grid--page proof-grid--ledger">
+          <article><span>RELEASE SUITE</span><strong>30</strong><small>source + Chromium tests</small></article>
+          <article><span>AGENT CONTRACT</span><strong>7 evals</strong><small>choice, ordering, negative cases</small></article>
+          <article><span>STATEFUL RUN</span><strong>{cueCount}</strong><small>cues with locks, readiness, revisions</small></article>
+          <article><span>BROWSER STATUS</span><strong>{webmcpStatusLabel(webmcp)}</strong><small>current WebMCP registration</small></article>
+        </div>
+        <div className="proof-ledger" aria-label="LINECALL proof ledger">
+          <div><span>01</span><b>Inspect surface</b><small>4 tools available before approval</small><em>PASS</em></div>
+          <div><span>02</span><b>Human gate</b><small>apply capability absent until exact-plan approval</small><em>PASS</em></div>
+          <div><span>03</span><b>One-time execution</b><small>R1 → R2, then authority closes</small><em>PASS</em></div>
+          <div><span>04</span><b>Boundary preservation</b><small>Q014 lock survives · receipt remains visible</small><em>PASS</em></div>
         </div>
         <div className="proof-terminal" aria-label="LINECALL proof summary">
           <span>&gt; linecall proof --native</span>
@@ -349,8 +432,8 @@ export function TrustPage({ webmcp, cueCount }) {
         </div>
       </section>
 
-      <section className="trust-endcap">
-        <h2>See the boundary operate instead of reading about it.</h2>
+      <section className="trust-endcap trust-endcap--vault">
+        <div><span>THE CONTRACT IS VISIBLE</span><h2>See the boundary operate instead of reading about it.</h2></div>
         <a className="site-button" href={routeHref('/demo')}>Open the live desk</a>
       </section>
     </>
