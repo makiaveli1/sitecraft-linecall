@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "siteUrl": "https://quiet-fossil-wxms.here.now/",
+  "siteUrl": "https://cedar-quasar-f7v3.here.now/",
   "finalizeState": "live",
   "persistenceBeforeClaim": "expiring",
-  "claimCiphertext": "Z8CEzXvrThJc8mnOHT7c6EuwI8+DBvqTOMrofNVSFgrWOMHHfPuMtG75gjcgMcyZqcQUxAhYSTjgWQOE5F0KA/3EHtruQkBm+3RU6r3cxchJchoTrSgAE+aYh3BPTUshpCGl/tweQi5RfuxMCP/gcKJBYA0f/KRFrMtngzZwyoCO5hZFO2Zc4dFg5tjm/njoOexm1FZDD8CLcs3/fMxkh2SG8GNGcInYrTs1jTCuofF+aWRwcdbnVNGG1U9jSKAKr6UMQ7K1pGzHwQd0pO7ySzQFDJOpi5DA8UVHbShNXHwxLy/xPBEqfKVVVepoO8FDcH5USqvoCOh630QQ+hGhxA==",
-  "sourceSha": "d108403b6f7d48fd4066852c626e6ce870532ef2",
-  "generatedAt": "2026-08-27T21:06:37.312Z"
+  "claimCiphertext": "HZd+xDOSxcOOuePKgpyDGSjmTZiBoXOVWMNQp0iObwgA62buaBbmgBYmGfbroRm8J5++hGWrOt+FTEmSxSegBvddmE/7Ry7XeoG2TeNAvpq2Vqs37D4RoFSQnVDWGYtAKURYf6YUwNKipkY0NcqMRZRDxKVDWg5UYZOLi4Lb/wlbofAGAJ5n/eyHBHxupiedEGdejvkvQbyLiJtPdxaXovLyloYUJHdrXNcY3T9XybajIQ9jjqcruRfA/ntnOxBY9rWg5lFyJ2pktM77NsPBEuOF4hVMGep9tNL92qS7cZLyViVp/O+Mbns+9utLmqFvESKE4DO0hx6wEK/vqJf8TQ==",
+  "sourceSha": "84c09870f9e7f0f99f0c50c3bbf37d619696cc3f",
+  "generatedAt": "2026-08-29T05:37:01.879Z"
 }
