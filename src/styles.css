@@ -1920,32 +1920,40 @@ body {
 .segment-track {
   grid-area: track;
   position: relative;
-  padding: 0.95rem clamp(1rem, 2vw, 1.7rem) 1rem;
+  padding: 1.05rem clamp(1rem, 2.2vw, 1.85rem) 1.12rem;
   border-top: 1px solid var(--lc-line);
-  background: #080a0c;
+  background:
+    linear-gradient(180deg, rgba(202, 255, 74, 0.026), rgba(202, 255, 74, 0) 62%),
+    #080a0c;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.018);
 }
 
 .segment-track__line {
   position: absolute;
-  top: 1.28rem;
-  left: clamp(1rem, 2vw, 1.7rem);
-  right: clamp(1rem, 2vw, 1.7rem);
-  height: 1px;
-  background: var(--lc-line-strong);
+  top: 1.38rem;
+  left: clamp(1rem, 2.2vw, 1.85rem);
+  right: clamp(1rem, 2.2vw, 1.85rem);
+  height: 2px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(70, 81, 85, 0.72);
 }
 
 .segment-track__line span {
   display: block;
-  height: 2px;
-  margin-top: -0.5px;
+  height: 100%;
+  border-radius: inherit;
   background: var(--lc-signal);
+  box-shadow: 0 0 0.7rem rgba(202, 255, 74, 0.24);
+  transition: width 180ms ease-out;
 }
 
 .segment-track ol {
   position: relative;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
+  gap: 0;
+  align-items: start;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -1953,19 +1961,27 @@ body {
 
 .segment-track li {
   display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.18rem 0.55rem;
+  grid-template-rows: 1rem auto auto;
+  gap: 0.25rem;
   min-width: 0;
-  color: var(--lc-muted);
+  padding-right: clamp(0.65rem, 1.4vw, 1.2rem);
+  color: var(--lc-dim);
 }
 
 .segment-track li > span {
-  grid-row: span 2;
-  width: 0.62rem;
-  height: 0.62rem;
-  margin-top: 0.03rem;
-  border: 1px solid var(--lc-line-strong);
-  background: var(--lc-canvas);
+  grid-row: 1;
+  width: 0.7rem;
+  height: 0.7rem;
+  margin-top: 0.01rem;
+  border: 2px solid var(--lc-line-strong);
+  border-radius: 50%;
+  background: #080a0c;
+  box-shadow: 0 0 0 0.24rem #080a0c;
+  transition:
+    border-color 120ms ease-out,
+    background-color 120ms ease-out,
+    box-shadow 120ms ease-out,
+    transform 120ms ease-out;
 }
 
 .segment-track li[data-state="complete"] > span {
@@ -1980,7 +1996,15 @@ body {
 .segment-track li[data-state="current"] > span {
   border-color: var(--lc-signal);
   background: var(--lc-signal);
-  box-shadow: 0 0 0 0.22rem rgba(202,255,74,0.1);
+  box-shadow:
+    0 0 0 0.24rem #080a0c,
+    0 0 0 0.32rem rgba(202, 255, 74, 0.22),
+    0 0 1rem rgba(202, 255, 74, 0.2);
+  transform: scale(1.12);
+}
+
+.segment-track li[data-state="upcoming"] {
+  color: var(--lc-dim);
 }
 
 .segment-track strong,
@@ -1992,14 +2016,33 @@ body {
 }
 
 .segment-track strong {
-  font-size: 0.68rem;
-  letter-spacing: 0.04em;
+  grid-row: 2;
+  margin-top: 0.05rem;
+  font-size: 0.72rem;
+  font-weight: 760;
+  line-height: 1.2;
+  letter-spacing: 0.025em;
+}
+
+.segment-track li[data-state="complete"] strong {
+  color: var(--lc-muted);
+}
+
+.segment-track li[data-state="current"] strong {
+  color: var(--lc-ink);
 }
 
 .segment-track small {
+  grid-row: 3;
   color: var(--lc-dim);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 0.62rem;
+  font-size: 0.6rem;
+  line-height: 1.25;
+  letter-spacing: 0.035em;
+}
+
+.segment-track li[data-state="current"] small {
+  color: var(--lc-muted);
 }
 
 .agent-panel {
