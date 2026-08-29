@@ -97,14 +97,18 @@ async function startDistServer() {
   const server = http.createServer((req, res) => {
     const rawPath = new URL(req.url, `http://127.0.0.1:${port}`).pathname;
     const relative = rawPath === '/' ? 'index.html' : rawPath.replace(/^\/+/, '');
-    const candidate = path.resolve(DIST, relative);
+    let candidate = path.resolve(DIST, relative);
     if (!candidate.startsWith(`${path.resolve(DIST)}${path.sep}`) && candidate !== path.resolve(DIST, 'index.html')) {
       res.writeHead(404).end();
       return;
     }
     if (!fs.existsSync(candidate) || !fs.statSync(candidate).isFile()) {
-      res.writeHead(404).end();
-      return;
+      const routeLike = !path.extname(rawPath) && rawPath !== '/';
+      if (!routeLike) {
+        res.writeHead(404).end();
+        return;
+      }
+      candidate = path.resolve(DIST, 'index.html');
     }
     const body = fs.readFileSync(candidate);
     requests.push({ path: rawPath, bytes: body.length });
@@ -198,7 +202,7 @@ async function evaluate(cdp, expression, awaitPromise = false) {
 async function waitForApp(cdp) {
   const deadline = Date.now() + 8000;
   while (Date.now() < deadline) {
-    const ready = await evaluate(cdp, `document.readyState === 'complete' && !!document.querySelector('.app-shell')`);
+    const ready = await evaluate(cdp, `document.readyState === 'complete' && !!document.querySelector('.site-shell')`);
     if (ready) return;
     await sleep(80);
   }
@@ -261,16 +265,16 @@ async function snapshot(cdp) {
     const productLead = document.querySelector('.command-header');
     const showPulse = document.querySelector('.show-pulse');
     const siteNav = document.querySelector('.site-nav');
-    const siteHero = document.querySelector('.site-hero');
+    const siteHero = document.querySelector('.wow-hero');
     const siteHeroTitle = siteHero?.querySelector('h1');
-    const siteHeroLede = siteHero?.querySelector('.site-hero__lede');
-    const heroConsole = document.querySelector('.hero-console');
-    const heroCta = document.querySelector('.site-hero__actions .site-button');
-    const meaningSection = document.querySelector('.site-section--meaning');
-    const howSection = document.querySelector('#how-it-works');
+    const siteHeroLede = siteHero?.querySelector('.wow-hero__lede');
+    const heroConsole = document.querySelector('.stage-visual');
+    const heroCta = document.querySelector('.wow-hero__actions .site-button');
+    const meaningSection = document.querySelector('.home-manifesto');
+    const howSection = document.querySelector('.route-gallery');
     const liveDemo = document.querySelector('#live-demo');
-    const safetySection = document.querySelector('#safety');
-    const proofSection = document.querySelector('#proof');
+    const safetySection = document.querySelector('.authority-grid--page');
+    const proofSection = document.querySelector('.proof-page');
     const segmentTrack = document.querySelector('.segment-track');
     const segmentLine = segmentTrack?.querySelector('.segment-track__line');
     const currentSegment = segmentTrack?.querySelector('li[data-state="current"]');
@@ -293,6 +297,18 @@ async function snapshot(cdp) {
       viewport: { width: innerWidth, height: innerHeight },
       scroll: { x: scrollX, y: scrollY, width: doc.scrollWidth, height: doc.scrollHeight },
       horizontalOverflow: doc.scrollWidth > doc.clientWidth + 1,
+      overflowingElements: [...document.querySelectorAll('body *')]
+        .map((node) => ({ node, rect: node.getBoundingClientRect() }))
+        .filter(({ rect }) => rect.width > 0 && (rect.left < -1 || rect.right > innerWidth + 1))
+        .slice(0, 12)
+        .map(({ node, rect }) => ({
+          tag: node.tagName,
+          id: node.id || '',
+          className: String(node.className || '').slice(0, 120),
+          left: Math.round(rect.left),
+          right: Math.round(rect.right),
+          width: Math.round(rect.width),
+        })),
       selectedCue: selectedRow?.querySelector('.cue-number')?.textContent.trim() ?? null,
       selectedVisible: visible(selectedRect),
       selectedRect: selectedRect ? { top: selectedRect.top, bottom: selectedRect.bottom, left: selectedRect.left, right: selectedRect.right } : null,
@@ -320,7 +336,8 @@ async function snapshot(cdp) {
       heroConsoleVisible: visible(heroConsole?.getBoundingClientRect() ?? null),
       heroCtaHref: heroCta?.getAttribute('href') ?? null,
       siteH1Count: document.querySelectorAll('h1').length,
-      siteStructureComplete: [meaningSection, howSection, liveDemo, safetySection, proofSection].every(Boolean),
+      siteStructureComplete: [meaningSection, howSection].every(Boolean),
+      trustStructureComplete: [safetySection, proofSection].every(Boolean),
       liveDemoInsideX: fullyInsideX(liveDemo),
       productLeadVisible: visible(productLead?.getBoundingClientRect() ?? null),
       showPulseVisible: visible(showPulse?.getBoundingClientRect() ?? null),
@@ -441,7 +458,10 @@ test('production build renders and behaves across real Chromium viewport states'
     await cdp.call('Network.enable');
     await cdp.call('Network.setCacheDisabled', { cacheDisabled: true });
     await cdp.call('Performance.enable');
-    const url = `http://127.0.0.1:${server.port}/`;
+    const homeUrl = `http://127.0.0.1:${server.port}/`;
+    const productUrl = `${homeUrl}product`;
+    const demoUrl = `${homeUrl}demo`;
+    const trustUrl = `${homeUrl}trust`;
 
     for (const viewport of VIEWPORTS) {
       await cdp.call('Emulation.setDeviceMetricsOverride', {
@@ -451,44 +471,75 @@ test('production build renders and behaves across real Chromium viewport states'
         mobile: false,
       });
       await cdp.call('Emulation.setEmulatedMedia', { media: '', features: [] });
-      await navigate(cdp, url);
+
+      await navigate(cdp, homeUrl);
       const state = await snapshot(cdp);
-      assert.equal(state.horizontalOverflow, false, `${viewport.label}: horizontal page overflow`);
-      assert.equal(state.siteNavInsideX, true, `${viewport.label}: primary navigation escaped the viewport`);
-      assert.equal(state.siteHeroInsideX, true, `${viewport.label}: product hero escaped the viewport`);
-      assert.equal(state.heroConsoleInsideX, true, `${viewport.label}: operational hero preview escaped the viewport`);
-      assert.equal(state.liveDemoInsideX, true, `${viewport.label}: live demo section escaped the viewport`);
-      assert.equal(state.siteHeroVisible, true, `${viewport.label}: product explanation is missing from the first viewport`);
-      assert.equal(state.siteH1Count, 1, `${viewport.label}: the site must expose one primary product heading`);
-      assert.equal(state.siteHeroTitle, 'Run the show. Let the agent solve the timing.', `${viewport.label}: first-view product promise drifted`);
-      assert.match(state.siteHeroLede, /keep the show on time.*AI agent.*You decide whether anything moves/i, `${viewport.label}: first-view explanation no longer says what LINECALL does, what the agent does, and who controls the result`);
-      assert.equal(state.heroCtaHref, '#live-demo', `${viewport.label}: first-view CTA no longer leads to the working product`);
-      assert.equal(state.siteStructureComplete, true, `${viewport.label}: one or more core website sections are missing`);
+      assert.equal(state.horizontalOverflow, false, `${viewport.label}: homepage overflowed horizontally: ${JSON.stringify(state.overflowingElements)}`);
+      assert.equal(state.siteNavInsideX, true, `${viewport.label}: primary navigation escaped the homepage viewport`);
+      assert.equal(state.siteHeroInsideX, true, `${viewport.label}: homepage hero escaped the viewport`);
+      assert.equal(state.heroConsoleInsideX, true, `${viewport.label}: cinematic key art escaped the viewport`);
+      assert.equal(state.siteHeroVisible, true, `${viewport.label}: homepage product promise is missing from the first viewport`);
+      assert.equal(state.siteH1Count, 1, `${viewport.label}: homepage must expose one primary heading`);
+      assert.equal(state.siteHeroTitle, 'When the show moves, LINECALL finds the time.', `${viewport.label}: homepage product promise drifted`);
+      assert.match(state.siteHeroLede, /live-event cue system.*AI agent.*human operator keeps the final call/i, `${viewport.label}: homepage no longer explains product, agent role, and human authority`);
+      assert.equal(state.heroCtaHref, '/demo', `${viewport.label}: homepage CTA no longer routes to the dedicated live desk`);
+      assert.equal(state.siteStructureComplete, true, `${viewport.label}: homepage manifesto or route gallery is missing`);
+      assert.equal(state.scroll.y, 0, `${viewport.label}: homepage did not load at the top`);
       if (viewport.width >= 900) {
-        assert.equal(state.heroConsoleVisible, true, `${viewport.label}: operational preview should support the first-view explanation`);
+        assert.equal(state.heroConsoleVisible, true, `${viewport.label}: cinematic operational key art should support the homepage story`);
       }
-      assert.equal(state.cueRowsInsideX, true, `${viewport.label}: cue row escaped the viewport`);
-      assert.equal(state.searchInsideX, true, `${viewport.label}: search input escaped the viewport`);
-      assert.equal(state.agentPanelInsideX, true, `${viewport.label}: WebMCP collaboration surface escaped the viewport`);
-      assert.equal(state.decisionStepCount, 4, `${viewport.label}: authority rail must expose all four collaboration steps`);
-      assert.match(state.decisionText, /Agent compares.*Rules verify.*Human approves.*Agent applies/s, `${viewport.label}: authority rail lost its collaboration sequence`);
-      assert.equal(state.agentBriefVisible, true, `${viewport.label}: operator briefing must remain available before agent action`);
-      assert.match(state.agentBriefText, /Audience Q&A needs to start two seconds later/i, `${viewport.label}: judge-facing demo prompt is missing`);
-      assert.equal(state.selectedCue, 'Q012', `${viewport.label}: initial selected cue drifted`);
-      assert.equal(state.currentCue, 'Q012', `${viewport.label}: declared current cue drifted`);
-      assert.equal(state.scroll.y, 0, `${viewport.label}: first load must preserve the top of the product site`);
+      const shot = await screenshot(cdp, `${viewport.label}-home.png`);
+      captures.push({ ...shot, label: `${viewport.label} · multi-page home` });
+
+      await navigate(cdp, productUrl);
+      const productState = await snapshot(cdp);
+      assert.equal(productState.horizontalOverflow, false, `${viewport.label}: product route overflowed horizontally`);
+      assert.equal(productState.siteNavInsideX, true, `${viewport.label}: product-route navigation escaped the viewport`);
+      assert.equal(productState.siteH1Count, 1, `${viewport.label}: product route must expose one primary heading`);
+      assert.equal(
+        await evaluate(cdp, `document.querySelector('h1')?.textContent.replace(/\\s+/g, ' ').trim()`),
+        'A second caller for the timing problem, not the show.',
+        `${viewport.label}: product-route heading drifted`,
+      );
+
+      await navigate(cdp, trustUrl);
+      const trustState = await snapshot(cdp);
+      assert.equal(trustState.horizontalOverflow, false, `${viewport.label}: trust route overflowed horizontally`);
+      assert.equal(trustState.siteNavInsideX, true, `${viewport.label}: trust-route navigation escaped the viewport`);
+      assert.equal(trustState.siteH1Count, 1, `${viewport.label}: trust route must expose one primary heading`);
+      assert.equal(trustState.trustStructureComplete, true, `${viewport.label}: trust authority/proof sections are missing`);
+      assert.equal(
+        await evaluate(cdp, `document.querySelector('h1')?.textContent.replace(/\\s+/g, ' ').trim()`),
+        'Useful because the agent cannot quietly become the operator.',
+        `${viewport.label}: trust-route heading drifted`,
+      );
+
+      await navigate(cdp, demoUrl);
+      const demoInitial = await snapshot(cdp);
+      assert.equal(demoInitial.horizontalOverflow, false, `${viewport.label}: dedicated live desk overflowed horizontally`);
+      assert.equal(demoInitial.siteNavInsideX, true, `${viewport.label}: live-desk navigation escaped the viewport`);
+      assert.equal(demoInitial.liveDemoInsideX, true, `${viewport.label}: live desk section escaped the viewport`);
+      assert.equal(demoInitial.siteH1Count, 1, `${viewport.label}: live desk route must expose one primary heading`);
+      assert.equal(demoInitial.cueRowsInsideX, true, `${viewport.label}: cue row escaped the viewport`);
+      assert.equal(demoInitial.searchInsideX, true, `${viewport.label}: search input escaped the viewport`);
+      assert.equal(demoInitial.agentPanelInsideX, true, `${viewport.label}: WebMCP collaboration surface escaped the viewport`);
+      assert.equal(demoInitial.decisionStepCount, 4, `${viewport.label}: authority rail must expose all four collaboration steps`);
+      assert.match(demoInitial.decisionText, /Agent compares.*Rules verify.*Human approves.*Agent applies/s, `${viewport.label}: authority rail lost its collaboration sequence`);
+      assert.equal(demoInitial.agentBriefVisible, true, `${viewport.label}: operator briefing must remain available before agent action`);
+      assert.match(demoInitial.agentBriefText, /Audience Q&A needs to start two seconds later/i, `${viewport.label}: judge-facing demo prompt is missing`);
+      assert.equal(demoInitial.selectedCue, 'Q012', `${viewport.label}: initial selected cue drifted`);
+      assert.equal(demoInitial.currentCue, 'Q012', `${viewport.label}: declared current cue drifted`);
+      assert.equal(demoInitial.scroll.y, 0, `${viewport.label}: direct /demo refresh did not preserve the top of the route`);
       if (viewport.width > 980) {
-        assert.notEqual(state.inspectorDisplay, 'none', 'Wide view must keep the selected-cue inspector available in the live desk.');
+        assert.notEqual(demoInitial.inspectorDisplay, 'none', 'Wide view must keep the selected-cue inspector available in the live desk.');
       } else {
-        assert.equal(state.inspectorDisplay, 'none', `${viewport.label}: inspector should not cover the score before selection.`);
+        assert.equal(demoInitial.inspectorDisplay, 'none', `${viewport.label}: inspector should not cover the score before selection.`);
       }
-      const shot = await screenshot(cdp, `${viewport.label}-initial.png`);
-      captures.push({ ...shot, label: `${viewport.label} · site first view` });
 
       await evaluate(cdp, `document.querySelector('.command-header').scrollIntoView({ block: 'start' }); true`);
       await sleep(120);
       const headerState = await snapshot(cdp);
-      assert.equal(headerState.productLeadVisible, true, `${viewport.label}: live desk header cannot be reached from the product site`);
+      assert.equal(headerState.productLeadVisible, true, `${viewport.label}: live desk header cannot be reached on /demo`);
 
       await evaluate(cdp, `document.querySelector('.show-pulse').scrollIntoView({ block: 'start' }); true`);
       await sleep(120);
@@ -500,13 +551,21 @@ test('production build renders and behaves across real Chromium viewport states'
       assert.ok(demoState.currentSegmentMarkerWidth >= 10, `${viewport.label}: current show-segment marker is too weak to read at a glance`);
       assert.equal(demoState.segmentRailClearsLabel, true, `${viewport.label}: progression rail collides with its segment label`);
       const demoShot = await screenshot(cdp, `${viewport.label}-live-desk.png`);
-      captures.push({ ...demoShot, label: `${viewport.label} · live desk` });
-      report.cases[viewport.label] = { initial: state, screenshot: shot, live_desk: demoState, live_desk_screenshot: demoShot };
+      captures.push({ ...demoShot, label: `${viewport.label} · dedicated live desk` });
+      report.cases[viewport.label] = {
+        home: state,
+        home_screenshot: shot,
+        product: productState,
+        trust: trustState,
+        live_desk_initial: demoInitial,
+        live_desk: demoState,
+        live_desk_screenshot: demoShot,
+      };
     }
 
     // Wide keyboard navigation, readiness, filters/search and hold preservation.
     await cdp.call('Emulation.setDeviceMetricsOverride', { width: 1366, height: 768, deviceScaleFactor: 1, mobile: false });
-    await navigate(cdp, url);
+    await navigate(cdp, demoUrl);
     await evaluate(cdp, `document.querySelector('.cue-row--selected .cue-select').focus(); true`);
     await pressKey(cdp, 'ArrowDown', 'ArrowDown');
     let state = await snapshot(cdp);
@@ -572,7 +631,7 @@ test('production build renders and behaves across real Chromium viewport states'
         });
       })();`,
     });
-    await navigate(cdp, url);
+    await navigate(cdp, demoUrl);
     const toolsReadyDeadline = Date.now() + 5000;
     while (Date.now() < toolsReadyDeadline) {
       const registeredCount = await evaluate(cdp, `document.modelContext?.__tools?.size ?? 0`);
@@ -699,8 +758,8 @@ test('production build renders and behaves across real Chromium viewport states'
       applied_screenshot: appliedShot,
     };
 
-    // Skip-link keyboard purpose.
-    await navigate(cdp, url);
+    // Skip-link keyboard purpose on the homepage.
+    await navigate(cdp, homeUrl);
     await evaluate(cdp, `document.querySelector('.skip-link').focus(); true`);
     await pressKey(cdp, 'Enter', 'Enter');
     const skipState = await snapshot(cdp);
@@ -710,7 +769,7 @@ test('production build renders and behaves across real Chromium viewport states'
     // Narrow pointer selection opens a real secondary detail view and return restores list + focus.
     for (const viewport of [{ label: 'mobile390', width: 390, height: 848 }, { label: 'exact320', width: 320, height: 848 }]) {
       await cdp.call('Emulation.setDeviceMetricsOverride', { width: viewport.width, height: viewport.height, deviceScaleFactor: 1, mobile: false });
-      await navigate(cdp, url);
+      await navigate(cdp, demoUrl);
       await pointerClick(cdp, '.cue-row--selected .cue-select');
       await sleep(220);
       const detailState = await snapshot(cdp);
@@ -735,7 +794,7 @@ test('production build renders and behaves across real Chromium viewport states'
       media: '',
       features: [{ name: 'prefers-reduced-motion', value: 'reduce' }],
     });
-    await navigate(cdp, url);
+    await navigate(cdp, demoUrl);
     await pointerClick(cdp, '.cue-row--selected .cue-select');
     await sleep(40);
     const reduced = await snapshot(cdp);
@@ -750,7 +809,7 @@ test('production build renders and behaves across real Chromium viewport states'
     await cdp.call('Emulation.setDeviceMetricsOverride', { width: 320, height: 848, deviceScaleFactor: 1, mobile: false });
     await cdp.call('Emulation.setEmulatedMedia', { media: '', features: [] });
     await cdp.call('Emulation.setScriptExecutionDisabled', { value: true });
-    await cdp.call('Page.navigate', { url });
+    await cdp.call('Page.navigate', { url: homeUrl });
     const deadline = Date.now() + 5000;
     while (Date.now() < deadline) {
       const ready = await evaluate(cdp, `document.readyState === 'complete'`);
@@ -784,13 +843,17 @@ test('production build renders and behaves across real Chromium viewport states'
       external_requests: server.requests.filter((request) => !request.path.startsWith('/')),
     };
     report.findings = {
-      initial_first_viewport: Object.fromEntries(Object.entries(report.cases).map(([label, entry]) => [label, {
-        scrollY: entry.initial.scroll.y,
-        productLeadVisible: entry.initial.productLeadVisible,
-        showPulseVisible: entry.initial.showPulseVisible,
-        agentPanelVisible: entry.initial.agentPanelVisible,
-        selectedCue: entry.initial.selectedCue,
-        selectedVisible: entry.initial.selectedVisible,
+      homepage_first_viewport: Object.fromEntries(Object.entries(report.cases).map(([label, entry]) => [label, {
+        scrollY: entry.home.scroll.y,
+        heroVisible: entry.home.siteHeroVisible,
+        keyArtVisible: entry.home.heroConsoleVisible,
+        heading: entry.home.siteHeroTitle,
+      }])),
+      live_desk_direct_route: Object.fromEntries(Object.entries(report.cases).map(([label, entry]) => [label, {
+        scrollY: entry.live_desk_initial.scroll.y,
+        selectedCue: entry.live_desk_initial.selectedCue,
+        currentCue: entry.live_desk_initial.currentCue,
+        agentPanelInsideX: entry.live_desk_initial.agentPanelInsideX,
       }])),
     };
     report.passed = true;

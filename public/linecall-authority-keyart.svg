@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 900" role="img" aria-labelledby="title desc">
+  <title id="title">LINECALL human authority lifecycle</title>
+  <desc id="desc">An abstract three-stage control loop showing four agent tools, a human approval opening a fifth tool, and the system returning to four tools.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#070a0b"/><stop offset="1" stop-color="#0e1416"/></linearGradient>
+    <linearGradient id="lime" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#caff4a"/><stop offset="1" stop-color="#8fb62f"/></linearGradient>
+    <linearGradient id="amber" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#ffb454"/><stop offset="1" stop-color="#d37d22"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="10" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <pattern id="grid" width="36" height="36" patternUnits="userSpaceOnUse"><path d="M36 0H0V36" fill="none" stroke="#b5c0c3" stroke-opacity=".035"/></pattern>
+  </defs>
+  <rect width="1400" height="900" fill="url(#bg)"/>
+  <rect width="1400" height="900" fill="url(#grid)"/>
+  <rect x="42" y="42" width="1316" height="816" fill="none" stroke="#465154" stroke-opacity=".45"/>
+
+  <g transform="translate(92 132)">
+    <g>
+      <rect width="350" height="570" rx="10" fill="#0a0e10" stroke="#3f4a4d"/>
+      <rect width="6" height="570" rx="3" fill="#caff4a"/>
+      <text x="38" y="52" fill="#92a0a4" font-family="monospace" font-size="18" letter-spacing="3">EXPLORE</text>
+      <text x="38" y="132" fill="#eef2ec" font-family="Arial, sans-serif" font-size="84" font-weight="700">4</text>
+      <text x="126" y="130" fill="#caff4a" font-family="monospace" font-size="20">TOOLS</text>
+      <g transform="translate(38 206)" fill="#11191b" stroke="#415055">
+        <rect width="274" height="54" rx="4"/><rect y="70" width="274" height="54" rx="4"/><rect y="140" width="274" height="54" rx="4"/><rect y="210" width="274" height="54" rx="4"/>
+      </g>
+      <g transform="translate(58 238)" fill="#dce3e3" font-family="monospace" font-size="14">
+        <text>READ RUN</text><text y="70">COMPARE</text><text y="140">PREVIEW</text><text y="210">READINESS</text>
+      </g>
+      <circle cx="304" cy="513" r="7" fill="#caff4a" filter="url(#glow)"/>
+    </g>
+
+    <g transform="translate(430 0)">
+      <rect width="350" height="570" rx="10" fill="#0d1011" stroke="#6b5437"/>
+      <rect width="6" height="570" rx="3" fill="#ffb454"/>
+      <text x="38" y="52" fill="#b89a78" font-family="monospace" font-size="18" letter-spacing="3">HUMAN GATE</text>
+      <text x="38" y="132" fill="#eef2ec" font-family="Arial, sans-serif" font-size="84" font-weight="700">5</text>
+      <text x="126" y="130" fill="#ffb454" font-family="monospace" font-size="20">TOOLS</text>
+      <circle cx="175" cy="270" r="96" fill="#16120d" stroke="#ffb454" stroke-width="2"/>
+      <circle cx="175" cy="270" r="64" fill="none" stroke="#ffb454" stroke-opacity=".4"/>
+      <path d="M138 270l24 26 53-63" fill="none" stroke="#ffb454" stroke-width="8" stroke-linecap="square"/>
+      <text x="175" y="408" text-anchor="middle" fill="#f1e5d6" font-family="Arial, sans-serif" font-size="18" font-weight="700">EXACT PLAN APPROVED</text>
+      <text x="175" y="442" text-anchor="middle" fill="#a99075" font-family="monospace" font-size="13">ONE-TIME APPLY OPENS</text>
+      <circle cx="304" cy="513" r="7" fill="#ffb454" filter="url(#glow)"/>
+    </g>
+
+    <g transform="translate(860 0)">
+      <rect width="350" height="570" rx="10" fill="#0a0e10" stroke="#3f4a4d"/>
+      <rect width="6" height="570" rx="3" fill="#caff4a"/>
+      <text x="38" y="52" fill="#92a0a4" font-family="monospace" font-size="18" letter-spacing="3">CLOSE</text>
+      <text x="38" y="132" fill="#eef2ec" font-family="Arial, sans-serif" font-size="84" font-weight="700">4</text>
+      <text x="126" y="130" fill="#caff4a" font-family="monospace" font-size="20">TOOLS</text>
+      <g transform="translate(38 208)">
+        <rect width="274" height="70" rx="5" fill="#11191b" stroke="#415055"/>
+        <text x="20" y="29" fill="#eef2ec" font-family="Arial, sans-serif" font-size="16" font-weight="700">NEW REVISION</text>
+        <text x="20" y="52" fill="#8d9a9e" font-family="monospace" font-size="13">R1 → R2</text>
+        <rect y="94" width="274" height="70" rx="5" fill="#11191b" stroke="#415055"/>
+        <text x="20" y="123" fill="#eef2ec" font-family="Arial, sans-serif" font-size="16" font-weight="700">RECEIPT LEFT</text>
+        <text x="20" y="146" fill="#8d9a9e" font-family="monospace" font-size="13">AUTHORITY CLOSED</text>
+      </g>
+      <path d="M60 432H290" stroke="#2c373a" stroke-width="2"/>
+      <path d="M60 432H216" stroke="url(#lime)" stroke-width="4"/>
+      <circle cx="218" cy="432" r="8" fill="#caff4a" filter="url(#glow)"/>
+      <circle cx="304" cy="513" r="7" fill="#caff4a" filter="url(#glow)"/>
+    </g>
+
+    <g stroke="#607074" stroke-width="2" fill="none" opacity=".8">
+      <path d="M350 284H430"/><path d="M780 284H860"/>
+    </g>
+    <g fill="#caff4a"><path d="M416 276l14 8-14 8z"/><path d="M846 276l14 8-14 8z"/></g>
+  </g>
+
+  <g transform="translate(92 756)">
+    <rect width="1210" height="58" rx="4" fill="#090d0f" stroke="#344044"/>
+    <circle cx="28" cy="29" r="6" fill="#caff4a"/>
+    <text x="50" y="35" fill="#b6c0c2" font-family="monospace" font-size="15" letter-spacing="1">AGENT EXPLORES · RULES VERIFY · HUMAN DECIDES · AUTHORITY EXPIRES</text>
+  </g>
+</svg>

@@ -39,9 +39,11 @@ jobs:
           const crypto = require('crypto');
 
           const expected = new Map([
-            ['index.html', 1316],
-            ['assets/index-BhS57_nS.css', 61892],
-            ['assets/index-DqvJBf31.js', 248909],
+            ['index.html', 1366],
+            ['assets/index-txE6i7CW.css', 77948],
+            ['assets/index-JAA632wP.js', 253519],
+            ['linecall-authority-keyart.svg', 5587],
+            ['linecall-stage-keyart.svg', 6403],
           ]);
 
           const found = [];
@@ -89,9 +91,11 @@ jobs:
             "displayDescription": "LINECALL helps live-event teams keep a show on time while an AI agent explores safe timing fixes and the human operator keeps final authority.",
             "spaMode": true,
             "files": [
-              {"path":"index.html","size":1316,"contentType":"text/html; charset=utf-8"},
-              {"path":"assets/index-BhS57_nS.css","size":61892,"contentType":"text/css; charset=utf-8"},
-              {"path":"assets/index-DqvJBf31.js","size":248909,"contentType":"text/javascript; charset=utf-8"}
+              {"path":"index.html","size":1366,"contentType":"text/html; charset=utf-8"},
+              {"path":"assets/index-txE6i7CW.css","size":77948,"contentType":"text/css; charset=utf-8"},
+              {"path":"assets/index-JAA632wP.js","size":253519,"contentType":"text/javascript; charset=utf-8"},
+              {"path":"linecall-authority-keyart.svg","size":5587,"contentType":"image/svg+xml"},
+              {"path":"linecall-stage-keyart.svg","size":6403,"contentType":"image/svg+xml"}
             ]
           }
           JSON
@@ -114,8 +118,10 @@ jobs:
               --data-binary "@dist/$rel" >/dev/null
           done <<'FILES'
           index.html|text/html; charset=utf-8
-          assets/index-BhS57_nS.css|text/css; charset=utf-8
-          assets/index-DqvJBf31.js|text/javascript; charset=utf-8
+          assets/index-txE6i7CW.css|text/css; charset=utf-8
+          assets/index-JAA632wP.js|text/javascript; charset=utf-8
+          linecall-authority-keyart.svg|image/svg+xml
+          linecall-stage-keyart.svg|image/svg+xml
           FILES
 
           finalize_json="$(curl -fsS -X POST "$finalize_url" \
