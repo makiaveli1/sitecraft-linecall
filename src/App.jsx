@@ -204,8 +204,6 @@ function AgentCollaborationPanel({
   comparison,
   approvedPlanId,
   receipts,
-  onApprove,
-  onDismiss,
 }) {
   const statusLabel = webmcp.status === 'registered'
     ? webmcp.browserVerified
@@ -349,19 +347,13 @@ function AgentCollaborationPanel({
             </ul>
           ) : null}
 
-          <div className="button-row">
-            {preview.status === 'ready' ? (
-              <button
-                type="button"
-                onClick={onApprove}
-                disabled={approvedPlanId === preview.planId}
-              >
-                {approvedPlanId === preview.planId ? 'Exact plan approved' : 'Approve this exact plan'}
-              </button>
-            ) : null}
-            <button type="button" className="button-secondary" onClick={onDismiss}>
-              Dismiss preview
-            </button>
+          <div className="agent-plan__handoff">
+            <span>{approvedPlanId === preview.planId ? 'APPROVAL RECORDED' : 'REVIEW EVIDENCE'}</span>
+            <p>
+              {approvedPlanId === preview.planId
+                ? 'This exact plan is approved. The pinned decision bar controls the one guarded apply.'
+                : 'These details explain the recommendation. The pinned decision bar controls the human decision.'}
+            </p>
           </div>
           {approvedPlanId === preview.planId ? (
             <p className="agent-plan__approval">Approval is bound to this plan ID and revision. The agent can apply it once.</p>
@@ -403,9 +395,6 @@ function DemoScenarioConsole({
   approvedPlanId,
   receipts,
   onStart,
-  onApprove,
-  onApply,
-  onReset,
 }) {
   const latestReceipt = receipts[0] ?? null;
   const applied = Boolean(latestReceipt && revision > 1);
@@ -478,22 +467,76 @@ function DemoScenarioConsole({
       <div className="demo-scenario-console__action">
         {!ready && !applied ? (
           <button type="button" className="demo-scenario-primary" data-demo-action="start" onClick={onStart}>Run the +2s pressure test</button>
-        ) : ready && !approved ? (
-          <button type="button" className="demo-scenario-primary" data-demo-action="approve" onClick={onApprove}>Approve this exact {changedCueCount}-cue plan</button>
-        ) : approved ? (
-          <button type="button" className="demo-scenario-primary" data-demo-action="apply" onClick={onApply}>Show the guarded R2 outcome</button>
         ) : (
-          <button type="button" className="demo-scenario-primary" data-demo-action="reset" onClick={onReset}>Reset and replay from R1</button>
+          <div className="demo-scenario-console__handoff" aria-live="polite">
+            <span>{applied ? 'R2 IS LIVE' : approved ? 'APPROVAL RECORDED' : 'LOOK AT THE CYAN CUE SHIFTS'}</span>
+            <p>
+              {applied
+                ? latestReceipt?.summary ?? 'The approved plan was applied once and the run advanced.'
+                : approved
+                  ? 'The exact plan is approved. The pinned decision bar now exposes one guarded apply to R2.'
+                  : 'LINECALL has moved your view to the first affected cue. Nothing has changed yet; cyan rows are the proposal.'}
+            </p>
+          </div>
         )}
-        <p>
-          {approved
-            ? 'Guided mode calls LINECALL’s same guarded apply handler. In a WebMCP-capable browser, the agent receives this one-time capability after your approval.'
-            : applied
-              ? latestReceipt?.summary ?? 'The approved plan was applied once and the run advanced.'
-              : ready
-                ? 'Nothing has moved yet. The projected times are visible in the cue score below.'
-                : 'This uses the real deterministic planner on the current run. No prerecorded animation.'}
-        </p>
+        {!ready && !applied ? <p>This uses the real deterministic planner on the current run. No prerecorded animation.</p> : null}
+      </div>
+    </section>
+  );
+}
+
+function DemoDecisionDock({
+  revision,
+  preview,
+  approvedPlanId,
+  receipts,
+  onApprove,
+  onApply,
+  onDismiss,
+  onReset,
+}) {
+  const latestReceipt = receipts[0] ?? null;
+  const applied = Boolean(latestReceipt && revision > 1);
+  const approved = Boolean(preview?.status === 'ready' && approvedPlanId === preview.planId);
+  const ready = preview?.status === 'ready';
+  if (!ready && !applied) return null;
+
+  const changedCueCount = preview?.changes?.length ?? latestReceipt?.changedCueCount ?? 0;
+  const state = applied ? 'applied' : approved ? 'approved' : 'review';
+  const step = applied ? '04 / 04 · R2 LIVE' : approved ? '03 / 04 · HUMAN APPROVED' : '02 / 04 · REVIEW PROJECTION';
+  const title = applied
+    ? `${changedCueCount} cue changes are now live in R${revision}.`
+    : approved
+      ? 'This exact plan is approved. One guarded apply is open.'
+      : `${changedCueCount} cue times are projected to move.`;
+  const detail = applied
+    ? 'The preview became the live schedule and the one-time apply authority closed.'
+    : approved
+      ? 'Nothing else can be substituted. Apply this plan once to create R2.'
+      : 'Cyan rows are proposed times only. Unchanged controls are dimmed so you can inspect the consequence before approving it.';
+
+  return (
+    <section className={`demo-decision-dock is-${state}`} aria-label="Guided demo decision" aria-live="polite">
+      <div className="demo-decision-dock__signal" aria-hidden="true" />
+      <div className="demo-decision-dock__copy">
+        <span>{step}</span>
+        <strong>{title}</strong>
+        <small>{detail}</small>
+      </div>
+      <div className="demo-decision-dock__legend" aria-label="Cue preview legend">
+        {!applied ? <><span className="is-projected">CYAN = PROPOSED</span><span>GREY = UNCHANGED</span></> : <span className="is-live">R{revision} = LIVE</span>}
+      </div>
+      <div className="demo-decision-dock__actions">
+        {!approved && !applied ? (
+          <>
+            <button type="button" className="demo-decision-primary" data-demo-decision-action="approve" onClick={onApprove}>Approve {changedCueCount}-cue plan</button>
+            <button type="button" className="demo-decision-secondary" onClick={onDismiss}>Dismiss</button>
+          </>
+        ) : approved ? (
+          <button type="button" className="demo-decision-primary" data-demo-decision-action="apply" onClick={onApply}>Apply approved plan → R2</button>
+        ) : (
+          <button type="button" className="demo-decision-secondary" data-demo-decision-action="reset" onClick={onReset}>Reset demo to R1</button>
+        )}
       </div>
     </section>
   );
@@ -716,6 +759,16 @@ export function App() {
   const pathname = rawPathname === '/'
     ? '/'
     : rawPathname.replace(/\/+$/, '') || '/';
+  const guidedPreviewReady = state.retimePreview?.status === 'ready';
+  const guidedPreviewApproved = Boolean(guidedPreviewReady && state.approvedPlanId === state.retimePreview.planId);
+  const guidedApplied = Boolean(state.receipts[0] && state.revision > 1);
+  const guidedFocusClass = guidedApplied
+    ? 'app-shell--guided-applied'
+    : guidedPreviewApproved
+      ? 'app-shell--guided-approved'
+      : guidedPreviewReady
+        ? 'app-shell--guided-review'
+        : 'app-shell--guided-idle';
   const validRoutes = new Set(['/', '/product', '/demo', '/trust']);
   const routeMeta = {
     '/': {
@@ -744,6 +797,14 @@ export function App() {
     document.title = meta.title;
     document.querySelector('meta[name="description"]')?.setAttribute('content', meta.description);
   }, [meta.description, meta.title]);
+
+  useEffect(() => {
+    if (pathname !== '/demo' || !guidedPreviewReady || guidedPreviewApproved) return;
+    const target = document.querySelector('.cue-row--preview-shift');
+    if (!target) return;
+    target.scrollIntoView({ block: 'center', inline: 'nearest' });
+    target.querySelector('.cue-select')?.focus({ preventScroll: true });
+  }, [pathname, guidedPreviewReady, guidedPreviewApproved, state.retimePreview?.planId]);
 
   return (
     <div className={`site-shell ${pathname === '/demo' ? 'site-shell--product-demo' : ''}`} id="top">
@@ -781,7 +842,7 @@ export function App() {
 
         {pathname === '/demo' && (
           <section className="site-demo site-demo--route site-demo--product" id="live-demo" aria-labelledby="live-demo-title">
-            <div className={`app-shell app-shell--product-demo ${state.detailOpen ? 'app-shell--detail-open' : ''} ${state.hold ? 'app-shell--hold' : ''}`}>
+            <div className={`app-shell app-shell--product-demo ${guidedFocusClass} ${state.detailOpen ? 'app-shell--detail-open' : ''} ${state.hold ? 'app-shell--hold' : ''}`}>
               <div className="demo-command-deck">
                 <DemoScenarioConsole
                   revision={state.revision}
@@ -790,9 +851,6 @@ export function App() {
                   approvedPlanId={state.approvedPlanId}
                   receipts={state.receipts}
                   onStart={startGuidedScenario}
-                  onApprove={() => dispatch({ type: 'APPROVE_RETIME_PREVIEW' })}
-                  onApply={applyGuidedScenario}
-                  onReset={resetFixture}
                 />
 
                 <ShowPulse
@@ -810,12 +868,31 @@ export function App() {
                 comparison={retimeComparison}
                 approvedPlanId={state.approvedPlanId}
                 receipts={state.receipts}
+              />
+
+              <DemoDecisionDock
+                revision={state.revision}
+                preview={state.retimePreview}
+                approvedPlanId={state.approvedPlanId}
+                receipts={state.receipts}
                 onApprove={() => dispatch({ type: 'APPROVE_RETIME_PREVIEW' })}
+                onApply={applyGuidedScenario}
                 onDismiss={() => dispatch({ type: 'DISMISS_RETIME_PREVIEW' })}
+                onReset={resetFixture}
               />
 
               <div className="workspace" id="linecall-main" tabIndex="-1">
         <section className="score-panel" aria-labelledby="score-title">
+          {guidedPreviewReady && !guidedApplied ? (
+            <div className="demo-review-banner" id="demo-review-anchor" role="status">
+              <div>
+                <span>WHAT TO LOOK AT</span>
+                <strong>{state.retimePreview.changes.length} cyan cue rows are the proposed schedule.</strong>
+                <small>Read each old → new time. Nothing has moved yet; unchanged cues are intentionally muted.</small>
+              </div>
+              <b>PROJECTION ONLY</b>
+            </div>
+          ) : null}
           <div className="score-heading">
             <div>
               <p className="eyebrow">Run of show</p>

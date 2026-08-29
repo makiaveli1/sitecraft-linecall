@@ -288,8 +288,14 @@ async function snapshot(cdp) {
     const demoScenarioAction = demoScenarioConsole?.querySelector('[data-demo-action]');
     const demoScenarioState = demoScenarioConsole?.querySelector('.demo-scenario-console__state');
     const demoImpactMap = demoScenarioConsole?.querySelector('.demo-impact-map');
+    const demoDecisionDock = document.querySelector('.demo-decision-dock');
+    const demoDecisionAction = demoDecisionDock?.querySelector('[data-demo-decision-action]');
+    const demoDecisionPrimary = demoDecisionDock?.querySelector('.demo-decision-primary');
+    const demoReviewBanner = document.querySelector('.demo-review-banner');
     const demoMarketingFooter = document.querySelector('.site-footer');
     const previewShiftRows = [...document.querySelectorAll('.cue-row--preview-shift')];
+    const firstPreviewShiftRow = previewShiftRows[0] ?? null;
+    const firstUnchangedRow = [...document.querySelectorAll('.cue-row')].find((row) => !row.classList.contains('cue-row--preview-shift')) ?? null;
     const trustCycle = document.querySelector('.trust-vault__cycle');
     const trustSeal = document.querySelector('.authority-grid__seal');
     const proofLedger = document.querySelector('.proof-ledger');
@@ -369,10 +375,22 @@ async function snapshot(cdp) {
       demoScenarioAction: demoScenarioAction?.getAttribute('data-demo-action') ?? null,
       demoScenarioActionText: demoScenarioAction?.textContent.trim() ?? '',
       demoScenarioStateText: demoScenarioState?.textContent.replace(/\\s+/g, ' ').trim() ?? '',
+      demoDecisionDockInsideX: fullyInsideX(demoDecisionDock),
+      demoDecisionDockVisible: visible(demoDecisionDock?.getBoundingClientRect() ?? null),
+      demoDecisionAction: demoDecisionAction?.getAttribute('data-demo-decision-action') ?? null,
+      demoDecisionActionText: demoDecisionAction?.textContent.replace(/\\s+/g, ' ').trim() ?? '',
+      demoDecisionPrimaryBackground: demoDecisionPrimary ? getComputedStyle(demoDecisionPrimary).backgroundColor : '',
+      demoDecisionPrimaryColor: demoDecisionPrimary ? getComputedStyle(demoDecisionPrimary).color : '',
+      demoReviewBannerVisible: visible(demoReviewBanner?.getBoundingClientRect() ?? null),
       demoMarketingNavPresent: !!siteNav,
       demoMarketingFooterPresent: !!demoMarketingFooter,
       previewShiftRowCount: previewShiftRows.length,
       previewShiftTexts: previewShiftRows.map((row) => row.querySelector('.cue-preview-shift')?.textContent.replace(/\\s+/g, ' ').trim() ?? ''),
+      firstPreviewShiftVisible: visible(firstPreviewShiftRow?.getBoundingClientRect() ?? null),
+      firstUnchangedRowOpacity: firstUnchangedRow ? Number(getComputedStyle(firstUnchangedRow).opacity) : null,
+      inspectorOpacity: inspector ? Number(getComputedStyle(inspector).opacity) : null,
+      duplicateAgentApprovalCount: document.querySelectorAll('.agent-plan button').length,
+      guidedFocusClass: [...(document.querySelector('.app-shell')?.classList ?? [])].find((name) => name.startsWith('app-shell--guided-')) ?? null,
       demoIdentityOldMastheadPresent: !!demoMasthead || !!demoBriefing,
       demoBackdropImage,
       demoWorkspaceBackdropImage,
@@ -610,25 +628,38 @@ test('production build renders and behaves across real Chromium viewport states'
       const guidedPreview = await snapshot(cdp);
       assert.equal(await evaluate(cdp, `window.__linecallDemoDocumentMarker`), 'same-document', `${viewport.label}: starting the demo reloaded the document`);
       assert.equal(await evaluate(cdp, `location.pathname`), demoPathBefore, `${viewport.label}: starting the demo navigated away from the product workspace`);
-      assert.equal(guidedPreview.demoScenarioAction, 'approve', `${viewport.label}: guided pressure test did not advance to human review`);
+      assert.equal(guidedPreview.demoScenarioAction, null, `${viewport.label}: scenario card still exposes a competing post-preview primary action`);
       assert.match(guidedPreview.demoScenarioStateText, /13 CUES.*PREVIEW/i, `${viewport.label}: guided preview state does not expose the 13-cue impact`);
+      assert.equal(guidedPreview.guidedFocusClass, 'app-shell--guided-review', `${viewport.label}: guided preview did not enter focused review mode`);
+      assert.equal(guidedPreview.demoDecisionDockInsideX, true, `${viewport.label}: pinned decision dock escaped the viewport`);
+      assert.equal(guidedPreview.demoDecisionDockVisible, true, `${viewport.label}: pinned decision dock is not visible during review`);
+      assert.equal(guidedPreview.demoDecisionAction, 'approve', `${viewport.label}: focused review does not expose one clear human approval action`);
+      assert.match(guidedPreview.demoDecisionActionText, /Approve 13-cue plan/i, `${viewport.label}: approval action does not name the exact 13-cue consequence`);
+      assert.equal(guidedPreview.demoDecisionPrimaryBackground, 'rgb(202, 255, 74)', `${viewport.label}: primary approval action lost LINECALL signal-green visibility`);
+      assert.equal(guidedPreview.demoDecisionPrimaryColor, 'rgb(7, 16, 0)', `${viewport.label}: primary approval action lost high-contrast dark text`);
+      assert.equal(guidedPreview.duplicateAgentApprovalCount, 0, `${viewport.label}: agent evidence panel still exposes a competing approval button`);
       assert.equal(guidedPreview.previewShiftRowCount, 13, `${viewport.label}: the cue score did not visually mark all 13 projected changes`);
       assert.ok(guidedPreview.previewShiftTexts.every((text) => /PREVIEW.*→/.test(text)), `${viewport.label}: projected cue rows do not expose before→after timing`);
+      assert.equal(guidedPreview.firstPreviewShiftVisible, true, `${viewport.label}: guided preview did not bring the affected cue chain into view`);
+      assert.ok(guidedPreview.firstUnchangedRowOpacity <= 0.35, `${viewport.label}: unchanged cues did not visually recede during review`);
+      if (viewport.width > 980) assert.ok(guidedPreview.inspectorOpacity <= 0.35, `${viewport.label}: selected-cue inspector still competes with the review target`);
 
       if (viewport.label === 'wide') {
         const guidedPreviewShot = await screenshot(cdp, 'wide-guided-preview.png');
         captures.push({ ...guidedPreviewShot, label: 'wide · guided +2s preview with affected cues' });
-        await pointerClick(cdp, '[data-demo-action="approve"]');
+        await pointerClick(cdp, '[data-demo-decision-action="approve"]');
         await sleep(140);
         const guidedApproved = await snapshot(cdp);
-        assert.equal(guidedApproved.demoScenarioAction, 'apply', 'Wide guided demo did not advance from human approval to the guarded apply state.');
+        assert.equal(guidedApproved.demoDecisionAction, 'apply', 'Wide guided demo did not advance from human approval to the guarded apply state.');
+        assert.equal(guidedApproved.guidedFocusClass, 'app-shell--guided-approved', 'Wide guided demo did not enter the approved focus state.');
         assert.match(guidedApproved.demoScenarioStateText, /APPROVED.*APPLY OPEN/i, 'Wide guided demo did not visibly open one-time apply authority.');
         assert.equal(await evaluate(cdp, `window.__linecallDemoDocumentMarker`), 'same-document', 'Human approval unexpectedly reloaded the demo document.');
 
-        await pointerClick(cdp, '[data-demo-action="apply"]');
+        await pointerClick(cdp, '[data-demo-decision-action="apply"]');
         await sleep(180);
         const guidedApplied = await snapshot(cdp);
-        assert.equal(guidedApplied.demoScenarioAction, 'reset', 'Wide guided demo did not reach its replay/reset state after apply.');
+        assert.equal(guidedApplied.demoDecisionAction, 'reset', 'Wide guided demo did not reach its replay/reset state after apply.');
+        assert.equal(guidedApplied.guidedFocusClass, 'app-shell--guided-applied', 'Wide guided demo did not enter the applied focus state.');
         assert.match(guidedApplied.demoScenarioStateText, /R2.*APPLIED/i, 'Wide guided demo did not visibly advance the live run to R2.');
         assert.equal(guidedApplied.previewShiftRowCount, 0, 'Projected cue styling remained after the approved plan became the live schedule.');
         assert.match(guidedApplied.agentReceiptText, /Audience Q&A moved \+2s.*13 cues.*R2/i, 'Wide guided demo did not leave a visible R2 execution receipt.');
@@ -764,17 +795,19 @@ test('production build renders and behaves across real Chromium viewport states'
       blockedOption: document.querySelector('.strategy-option--blocked')?.textContent.replace(/\\s+/g, ' ').trim() ?? '',
       recommendedOption: document.querySelector('.strategy-option.is-recommended')?.textContent.replace(/\\s+/g, ' ').trim() ?? '',
       planText: document.querySelector('.agent-plan')?.textContent.replace(/\\s+/g, ' ').trim() ?? '',
-      approvalButton: document.querySelector('.agent-plan button:not(.button-secondary)')?.textContent.trim() ?? '',
+      approvalButton: document.querySelector('[data-demo-decision-action="approve"]')?.textContent.trim() ?? '',
+      duplicateAgentButtons: document.querySelectorAll('.agent-plan button').length,
     }))()`);
     assert.equal(previewUi.comparisonVisible, true, 'WebMCP retime preview did not render the deterministic comparison surface.');
     assert.match(previewUi.blockedOption, /Segment only.*Blocked/i, 'Blocked segment-only strategy is not visible to the operator.');
     assert.match(previewUi.recommendedOption, /Ripple downstream.*Safe.*Recommended by deterministic constraints/i, 'Safe recommended ripple strategy is not visibly explained.');
     assert.match(previewUi.planText, /Audience Q&A.*13/i, 'Exact Q&A plan is not visibly staged for human review.');
-    assert.match(previewUi.approvalButton, /Approve this exact plan/i, 'Human approval control is not visible for the ready plan.');
+    assert.match(previewUi.approvalButton, /Approve 13-cue plan/i, 'Pinned human approval control is not visible for the ready plan.');
+    assert.equal(previewUi.duplicateAgentButtons, 0, 'Agent evidence panel reintroduced a competing approval control.');
     const previewShot = await screenshot(cdp, 'wide-webmcp-preview.png');
-    captures.push({ ...previewShot, label: 'wide · WebMCP rehearsal preview + decision trace' });
+    captures.push({ ...previewShot, label: 'wide · WebMCP rehearsal preview + focused decision dock' });
 
-    await pointerClick(cdp, '.agent-plan button:not(.button-secondary)');
+    await pointerClick(cdp, '[data-demo-decision-action="approve"]');
     assert.match(
       await evaluate(cdp, `document.querySelector('.agent-plan__approval')?.textContent.trim() ?? ''`),
       /Approval is bound to this plan ID and revision/i,

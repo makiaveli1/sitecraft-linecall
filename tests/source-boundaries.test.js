@@ -49,8 +49,8 @@ test('declared dependency surface stays intentionally small and reproducible', (
   for (const required of [
     '"spaMode": true',
     "['index.html', 1366]",
-    "['assets/index-DSDj7sK6.css', 120992]",
-    "['assets/index-Dk6HlP5S.js', 268164]",
+    "['assets/index-RivNE00x.css', 126906]",
+    "['assets/index-n8WEWzvN.js', 271115]",
     "['linecall-authority-keyart.svg', 5587]",
     'linecall-authority-keyart.svg|image/svg+xml',
     "- 'src/**'",
@@ -185,7 +185,11 @@ test('site architecture is route-based instead of one long-scroll page', () => {
   assert.ok(siteSource.includes('className="demo-product-bar"'), 'Live desk must render product chrome instead of the marketing navigation');
   assert.ok(appSource.includes('className={`demo-scenario-console'), 'Live desk must expose the guided pressure-test console');
   assert.ok(appSource.includes('data-demo-action="start"'), 'Live desk must expose a real guided-demo start action');
+  assert.ok(appSource.includes('className={`demo-decision-dock'), 'Live desk must pin one guided decision surface during review');
+  assert.ok(appSource.includes('data-demo-decision-action="approve"'), 'Live desk must expose the human approval only through the guided decision dock');
+  assert.ok(appSource.includes('WHAT TO LOOK AT'), 'Live desk must tell the operator where the projected consequence is visible');
   assert.ok(appSource.includes('cue-row--preview-shift'), 'Previewed timing changes must become visible inside the cue score');
+  assert.equal(appSource.includes("document.querySelector('.agent-plan button"), false, 'Agent evidence panel must not own a competing approval action');
   assert.equal(appSource.includes('<DemoHero'), false, 'Live desk must not retain the old marketing masthead');
   assert.ok(siteSource.includes('className="trust-vault__cycle"'), 'Trust route must retain its 4→5→4 permission-vault opening');
   assert.ok(siteSource.includes('className="proof-ledger"'), 'Trust route must retain its executable proof ledger');

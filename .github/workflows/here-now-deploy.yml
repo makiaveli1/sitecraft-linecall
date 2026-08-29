@@ -46,8 +46,8 @@ jobs:
 
           const expected = new Map([
             ['index.html', 1366],
-            ['assets/index-DSDj7sK6.css', 120992],
-            ['assets/index-Dk6HlP5S.js', 268164],
+            ['assets/index-RivNE00x.css', 126906],
+            ['assets/index-n8WEWzvN.js', 271115],
             ['linecall-authority-keyart.svg', 5587],
           ]);
 
@@ -102,8 +102,8 @@ jobs:
             "spaMode": true,
             "files": [
               {"path":"index.html","size":1366,"contentType":"text/html; charset=utf-8"},
-              {"path":"assets/index-DSDj7sK6.css","size":120992,"contentType":"text/css; charset=utf-8"},
-              {"path":"assets/index-Dk6HlP5S.js","size":268164,"contentType":"text/javascript; charset=utf-8"},
+              {"path":"assets/index-RivNE00x.css","size":126906,"contentType":"text/css; charset=utf-8"},
+              {"path":"assets/index-n8WEWzvN.js","size":271115,"contentType":"text/javascript; charset=utf-8"},
               {"path":"linecall-authority-keyart.svg","size":5587,"contentType":"image/svg+xml"}
             ]
           }
@@ -127,8 +127,8 @@ jobs:
               --data-binary "@dist/$rel" >/dev/null
           done <<'FILES'
           index.html|text/html; charset=utf-8
-          assets/index-DSDj7sK6.css|text/css; charset=utf-8
-          assets/index-Dk6HlP5S.js|text/javascript; charset=utf-8
+          assets/index-RivNE00x.css|text/css; charset=utf-8
+          assets/index-n8WEWzvN.js|text/javascript; charset=utf-8
           linecall-authority-keyart.svg|image/svg+xml
           FILES
 
