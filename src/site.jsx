@@ -72,36 +72,12 @@ function ArrowLink({ href, children }) {
   );
 }
 
-function StageVisual({ sequence, revision, className = '' }) {
-  return (
-    <figure className={`stage-visual ${className}`.trim()}>
-      <img
-        src={assetHref('linecall-stage-keyart.svg')}
-        alt="Abstract live production control desk facing a stage under lime and amber light beams"
-      />
-      <figcaption className="stage-visual__hud">
-        <div className="stage-visual__live"><i aria-hidden="true" /> Live run</div>
-        <div className="stage-visual__cue">
-          <span>NOW</span>
-          <strong>Q{cueNumber(sequence?.current)}</strong>
-          <b>{sequence?.current?.label ?? 'Waiting for cue'}</b>
-        </div>
-        <div className="stage-visual__next">
-          <span>NEXT</span>
-          <b>Q{cueNumber(sequence?.next)} · {sequence?.next?.label ?? 'No next cue'}</b>
-        </div>
-        <span className="stage-visual__revision">R{revision}</span>
-      </figcaption>
-    </figure>
-  );
-}
-
 export function HomePage({ showMeta, sequence, revision, webmcp, cueCount }) {
   const activeTools = webmcp?.status === 'registered' ? webmcp.toolCount : 4;
 
   return (
     <>
-      <section className="wow-hero" aria-labelledby="home-title">
+      <section className="wow-hero wow-hero--cinematic" aria-labelledby="home-title">
         <div className="wow-hero__copy">
           <p className="site-kicker">AI-assisted live production control</p>
           <h1 id="home-title">When the show moves, LINECALL finds the time.</h1>
@@ -120,24 +96,61 @@ export function HomePage({ showMeta, sequence, revision, webmcp, cueCount }) {
           </div>
         </div>
 
-        <StageVisual sequence={sequence} revision={revision} className="wow-hero__visual" />
+        <aside className="hero-live-card" aria-label="LINECALL live run preview">
+          <div className="hero-live-card__topline">
+            <span><i aria-hidden="true" /> LIVE RUN</span>
+            <b>{showMeta.title}</b>
+            <em>R{revision}</em>
+          </div>
+          <div className="hero-live-card__now">
+            <span>NOW</span>
+            <strong>Q{cueNumber(sequence?.current)}</strong>
+            <div>
+              <b>{sequence?.current?.label ?? 'Waiting for cue'}</b>
+              <small>{sequence?.current?.instruction ?? 'Waiting for the current cue.'}</small>
+            </div>
+          </div>
+          <div className="hero-live-card__next">
+            <span>NEXT</span>
+            <b>Q{cueNumber(sequence?.next)} · {sequence?.next?.label ?? 'No next cue'}</b>
+          </div>
+          <div className="hero-live-card__agent">
+            <span>AGENT</span>
+            <b>{activeTools} tools active</b>
+            <small>Explore the run. Preview the consequence. Stop for human approval.</small>
+          </div>
+        </aside>
+
+        <div className="hero-edge-note" aria-hidden="true">LIVE PRODUCTION · HUMAN AUTHORITY · WEBMCP</div>
       </section>
 
       <section className="home-manifesto" aria-labelledby="manifesto-title">
-        <p className="site-kicker">The pressure point</p>
-        <h2 id="manifesto-title">Two seconds late can become twenty seconds late. LINECALL shows the chain before you touch it.</h2>
-        <div className="home-manifesto__copy">
-          <p>
-            Live shows do not fail because teams lack dashboards. They fail when one small change ripples through people, departments, locks, and a hard out faster than anyone can safely reason about it.
-          </p>
-          <ArrowLink href="/product">Follow the timing story</ArrowLink>
+        <div className="home-manifesto__content">
+          <p className="site-kicker">The pressure point</p>
+          <h2 id="manifesto-title">Two seconds late can become twenty seconds late.</h2>
+          <div className="pressure-chain" aria-label="Example timing consequence">
+            <div><strong>+2s</strong><span>Audience Q&amp;A shifts</span></div>
+            <i aria-hidden="true">→</i>
+            <div><strong>13</strong><span>downstream cues move</span></div>
+            <i aria-hidden="true">→</i>
+            <div><strong>R2</strong><span>one approved run revision</span></div>
+          </div>
+          <div className="home-manifesto__copy">
+            <p>
+              LINECALL calculates the chain before anyone touches the live run. The agent compares options, deterministic rules reject unsafe futures, and the operator sees the exact consequence before choosing one.
+            </p>
+            <ArrowLink href="/product">Follow the timing story</ArrowLink>
+          </div>
         </div>
       </section>
 
       <section className="route-gallery" aria-labelledby="route-gallery-title">
         <div className="route-gallery__intro">
-          <p className="site-kicker">Explore LINECALL</p>
-          <h2 id="route-gallery-title">See the run. Work the timing. Inspect the boundary.</h2>
+          <div>
+            <p className="site-kicker">Explore LINECALL</p>
+            <h2 id="route-gallery-title">Three ways into the run.</h2>
+          </div>
+          <p>Understand the timing engine, operate the real desk, or inspect exactly where agent authority stops.</p>
         </div>
         <div className="route-gallery__grid">
           <a className="route-tile route-tile--product" href={routeHref('/product')}>
@@ -145,7 +158,7 @@ export function HomePage({ showMeta, sequence, revision, webmcp, cueCount }) {
             <div>
               <small>PRODUCT</small>
               <h3>Understand the timing engine</h3>
-              <p>See how run state, counterfactual planning, deterministic rules, and human authority fit together.</p>
+              <p>One live run, counterfactual planning, deterministic constraints, and an explicit human decision.</p>
             </div>
             <span className="route-tile__arrow" aria-hidden="true">↗</span>
           </a>
@@ -154,7 +167,7 @@ export function HomePage({ showMeta, sequence, revision, webmcp, cueCount }) {
             <div>
               <small>LIVE DESK</small>
               <h3>Operate the actual product</h3>
-              <p>Work the cue score, inspect the run, and use the real WebMCP-powered timing workflow.</p>
+              <p>Work the cue score and put the real WebMCP timing workflow under pressure.</p>
             </div>
             <span className="route-tile__arrow" aria-hidden="true">↗</span>
           </a>
@@ -163,7 +176,7 @@ export function HomePage({ showMeta, sequence, revision, webmcp, cueCount }) {
             <div>
               <small>TRUST + PROOF</small>
               <h3>Inspect the authority boundary</h3>
-              <p>See exactly what the agent can do, what it cannot do, and the executable evidence behind that claim.</p>
+              <p>See what the agent can do, what it cannot do, and the executable evidence behind that claim.</p>
             </div>
             <span className="route-tile__arrow" aria-hidden="true">↗</span>
           </a>
