@@ -262,6 +262,7 @@ async function snapshot(cdp) {
     const score = document.querySelector('.score-panel');
     const search = document.querySelector('input[type="search"]');
     const agentPanel = document.querySelector('.agent-panel');
+    const agentReceipt = document.querySelector('.agent-receipt');
     const productLead = document.querySelector('.command-header');
     const showPulse = document.querySelector('.show-pulse');
     const siteNav = document.querySelector('.site-nav');
@@ -274,6 +275,7 @@ async function snapshot(cdp) {
     const meaningSection = document.querySelector('.home-manifesto');
     const howSection = document.querySelector('.route-gallery');
     const liveDemo = document.querySelector('#live-demo');
+    const demoWorkspaceBackdropImage = liveDemo ? getComputedStyle(liveDemo, '::before').backgroundImage : '';
     const safetySection = document.querySelector('.authority-grid--page');
     const proofSection = document.querySelector('.proof-page');
     const productInstrument = document.querySelector('.product-lab__instrument');
@@ -281,6 +283,13 @@ async function snapshot(cdp) {
     const demoMasthead = document.querySelector('.demo-masthead--control-room');
     const demoBriefing = document.querySelector('.demo-scenario--briefing');
     const demoBackdropImage = demoMasthead ? getComputedStyle(demoMasthead, '::before').backgroundImage : '';
+    const demoProductBar = document.querySelector('.demo-product-bar');
+    const demoScenarioConsole = document.querySelector('.demo-scenario-console');
+    const demoScenarioAction = demoScenarioConsole?.querySelector('[data-demo-action]');
+    const demoScenarioState = demoScenarioConsole?.querySelector('.demo-scenario-console__state');
+    const demoImpactMap = demoScenarioConsole?.querySelector('.demo-impact-map');
+    const demoMarketingFooter = document.querySelector('.site-footer');
+    const previewShiftRows = [...document.querySelectorAll('.cue-row--preview-shift')];
     const trustCycle = document.querySelector('.trust-vault__cycle');
     const trustSeal = document.querySelector('.authority-grid__seal');
     const proofLedger = document.querySelector('.proof-ledger');
@@ -352,9 +361,21 @@ async function snapshot(cdp) {
       productIdentityComplete: [productInstrument, productTrace].every(Boolean),
       productInstrumentInsideX: fullyInsideX(productInstrument),
       productInstrumentVisible: visible(productInstrument?.getBoundingClientRect() ?? null),
-      demoIdentityComplete: [demoMasthead, demoBriefing].every(Boolean),
-      demoBriefingInsideX: fullyInsideX(demoBriefing),
+      demoIdentityComplete: [demoProductBar, demoScenarioConsole, demoImpactMap].every(Boolean),
+      demoProductBarInsideX: fullyInsideX(demoProductBar),
+      demoProductBarVisible: visible(demoProductBar?.getBoundingClientRect() ?? null),
+      demoScenarioInsideX: fullyInsideX(demoScenarioConsole),
+      demoScenarioVisible: visible(demoScenarioConsole?.getBoundingClientRect() ?? null),
+      demoScenarioAction: demoScenarioAction?.getAttribute('data-demo-action') ?? null,
+      demoScenarioActionText: demoScenarioAction?.textContent.trim() ?? '',
+      demoScenarioStateText: demoScenarioState?.textContent.replace(/\\s+/g, ' ').trim() ?? '',
+      demoMarketingNavPresent: !!siteNav,
+      demoMarketingFooterPresent: !!demoMarketingFooter,
+      previewShiftRowCount: previewShiftRows.length,
+      previewShiftTexts: previewShiftRows.map((row) => row.querySelector('.cue-preview-shift')?.textContent.replace(/\\s+/g, ' ').trim() ?? ''),
+      demoIdentityOldMastheadPresent: !!demoMasthead || !!demoBriefing,
       demoBackdropImage,
+      demoWorkspaceBackdropImage,
       trustIdentityComplete: [trustCycle, trustSeal, proofLedger].every(Boolean),
       trustCycleInsideX: fullyInsideX(trustCycle),
       proofLedgerInsideX: fullyInsideX(proofLedger),
@@ -367,6 +388,7 @@ async function snapshot(cdp) {
       currentSegmentMarkerWidth: currentSegmentMarker?.getBoundingClientRect().width ?? 0,
       segmentRailClearsLabel: !!segmentLineRect && !!currentSegmentLabelRect && segmentLineRect.bottom < currentSegmentLabelRect.top,
       agentPanelVisible: visible(agentPanel?.getBoundingClientRect() ?? null),
+      agentReceiptText: agentReceipt?.textContent.replace(/\\s+/g, ' ').trim() ?? '',
       decisionStepCount: decisionRail?.querySelectorAll('li').length ?? 0,
       decisionText: decisionRail?.textContent.replace(/\\s+/g, ' ').trim() ?? '',
       agentBriefVisible: !!agentBrief && getComputedStyle(agentBrief).display !== 'none',
@@ -547,12 +569,24 @@ test('production build renders and behaves across real Chromium viewport states'
       await navigate(cdp, demoUrl);
       const demoInitial = await snapshot(cdp);
       assert.equal(demoInitial.horizontalOverflow, false, `${viewport.label}: dedicated live desk overflowed horizontally: ${JSON.stringify(demoInitial.overflowingElements)}`);
-      assert.equal(demoInitial.siteNavInsideX, true, `${viewport.label}: live-desk navigation escaped the viewport`);
+      assert.equal(demoInitial.demoMarketingNavPresent, false, `${viewport.label}: live desk must not render the marketing navigation`);
+      assert.equal(demoInitial.demoMarketingFooterPresent, false, `${viewport.label}: live desk must not render the marketing footer`);
+      assert.equal(demoInitial.demoProductBarInsideX, true, `${viewport.label}: live-desk product bar escaped the viewport`);
+      assert.equal(demoInitial.demoProductBarVisible, true, `${viewport.label}: live-desk product bar must be visible immediately`);
       assert.equal(demoInitial.liveDemoInsideX, true, `${viewport.label}: live desk section escaped the viewport`);
       assert.equal(demoInitial.siteH1Count, 1, `${viewport.label}: live desk route must expose one primary heading`);
-      assert.equal(demoInitial.demoIdentityComplete, true, `${viewport.label}: live-desk control-room identity is incomplete`);
-      assert.equal(demoInitial.demoBriefingInsideX, true, `${viewport.label}: live-desk mission brief escaped the viewport`);
-      assert.match(demoInitial.demoBackdropImage, /images\.unsplash\.com.*photo-1786155458201-9554cdde897e/i, `${viewport.label}: live-desk control-room photography is missing`);
+      assert.equal(
+        await evaluate(cdp, `document.querySelector('h1')?.textContent.replace(/\\s+/g, ' ').trim()`),
+        'Live timing control',
+        `${viewport.label}: live-desk product heading drifted`,
+      );
+      assert.equal(demoInitial.demoIdentityComplete, true, `${viewport.label}: live-desk product identity is incomplete`);
+      assert.equal(demoInitial.demoIdentityOldMastheadPresent, false, `${viewport.label}: obsolete marketing masthead returned to /demo`);
+      assert.equal(demoInitial.demoScenarioInsideX, true, `${viewport.label}: guided scenario console escaped the viewport`);
+      assert.equal(demoInitial.demoScenarioVisible, true, `${viewport.label}: guided scenario must be visible without hunting down the page`);
+      assert.equal(demoInitial.demoScenarioAction, 'start', `${viewport.label}: initial guided action must start the pressure test`);
+      assert.match(demoInitial.demoScenarioActionText, /Run the \+2s pressure test/i, `${viewport.label}: guided demo start action is unclear`);
+      assert.match(demoInitial.demoWorkspaceBackdropImage, /images\.unsplash\.com.*photo-1786155458201-9554cdde897e/i, `${viewport.label}: live-desk control-room atmosphere is missing`);
       assert.equal(demoInitial.cueRowsInsideX, true, `${viewport.label}: cue row escaped the viewport`);
       assert.equal(demoInitial.searchInsideX, true, `${viewport.label}: search input escaped the viewport`);
       assert.equal(demoInitial.agentPanelInsideX, true, `${viewport.label}: WebMCP collaboration surface escaped the viewport`);
@@ -569,10 +603,39 @@ test('production build renders and behaves across real Chromium viewport states'
         assert.equal(demoInitial.inspectorDisplay, 'none', `${viewport.label}: inspector should not cover the score before selection.`);
       }
 
-      await evaluate(cdp, `document.querySelector('.command-header').scrollIntoView({ block: 'start' }); true`);
-      await sleep(120);
-      const headerState = await snapshot(cdp);
-      assert.equal(headerState.productLeadVisible, true, `${viewport.label}: live desk header cannot be reached on /demo`);
+      await evaluate(cdp, `window.__linecallDemoDocumentMarker = 'same-document'; true`);
+      const demoPathBefore = await evaluate(cdp, `location.pathname`);
+      await pointerClick(cdp, '[data-demo-action="start"]');
+      await sleep(180);
+      const guidedPreview = await snapshot(cdp);
+      assert.equal(await evaluate(cdp, `window.__linecallDemoDocumentMarker`), 'same-document', `${viewport.label}: starting the demo reloaded the document`);
+      assert.equal(await evaluate(cdp, `location.pathname`), demoPathBefore, `${viewport.label}: starting the demo navigated away from the product workspace`);
+      assert.equal(guidedPreview.demoScenarioAction, 'approve', `${viewport.label}: guided pressure test did not advance to human review`);
+      assert.match(guidedPreview.demoScenarioStateText, /13 CUES.*PREVIEW/i, `${viewport.label}: guided preview state does not expose the 13-cue impact`);
+      assert.equal(guidedPreview.previewShiftRowCount, 13, `${viewport.label}: the cue score did not visually mark all 13 projected changes`);
+      assert.ok(guidedPreview.previewShiftTexts.every((text) => /PREVIEW.*→/.test(text)), `${viewport.label}: projected cue rows do not expose before→after timing`);
+
+      if (viewport.label === 'wide') {
+        const guidedPreviewShot = await screenshot(cdp, 'wide-guided-preview.png');
+        captures.push({ ...guidedPreviewShot, label: 'wide · guided +2s preview with affected cues' });
+        await pointerClick(cdp, '[data-demo-action="approve"]');
+        await sleep(140);
+        const guidedApproved = await snapshot(cdp);
+        assert.equal(guidedApproved.demoScenarioAction, 'apply', 'Wide guided demo did not advance from human approval to the guarded apply state.');
+        assert.match(guidedApproved.demoScenarioStateText, /APPROVED.*APPLY OPEN/i, 'Wide guided demo did not visibly open one-time apply authority.');
+        assert.equal(await evaluate(cdp, `window.__linecallDemoDocumentMarker`), 'same-document', 'Human approval unexpectedly reloaded the demo document.');
+
+        await pointerClick(cdp, '[data-demo-action="apply"]');
+        await sleep(180);
+        const guidedApplied = await snapshot(cdp);
+        assert.equal(guidedApplied.demoScenarioAction, 'reset', 'Wide guided demo did not reach its replay/reset state after apply.');
+        assert.match(guidedApplied.demoScenarioStateText, /R2.*APPLIED/i, 'Wide guided demo did not visibly advance the live run to R2.');
+        assert.equal(guidedApplied.previewShiftRowCount, 0, 'Projected cue styling remained after the approved plan became the live schedule.');
+        assert.match(guidedApplied.agentReceiptText, /Audience Q&A moved \+2s.*13 cues.*R2/i, 'Wide guided demo did not leave a visible R2 execution receipt.');
+        assert.equal(await evaluate(cdp, `window.__linecallDemoDocumentMarker`), 'same-document', 'Guided apply unexpectedly reloaded the demo document.');
+        const guidedAppliedShot = await screenshot(cdp, 'wide-guided-r2.png');
+        captures.push({ ...guidedAppliedShot, label: 'wide · guided R2 outcome + receipt' });
+      }
 
       await evaluate(cdp, `document.querySelector('.show-pulse').scrollIntoView({ block: 'start' }); true`);
       await sleep(120);
@@ -607,12 +670,12 @@ test('production build renders and behaves across real Chromium viewport states'
     await pointerClick(cdp, '.cue-row--selected .readiness-chip');
     state = await snapshot(cdp);
     assert.equal(state.readiness, 'Ready', 'Pointer readiness change did not reach Ready.');
-    await pointerClick(cdp, '.hold-control');
+    await pointerClick(cdp, '.demo-hold-control');
     state = await snapshot(cdp);
     assert.equal(state.hold, true, 'Hold control did not enter hold state.');
     assert.equal(state.selectedCue, 'Q013', 'Hold must preserve cue selection.');
     assert.equal(state.readiness, 'Ready', 'Hold must preserve readiness.');
-    await pointerClick(cdp, '.hold-control');
+    await pointerClick(cdp, '.demo-hold-control');
     await pointerClick(cdp, '.department-filters button[data-department="audio"]');
     state = await snapshot(cdp);
     assert.ok(state.rowCount > 0, 'Audio filter unexpectedly hid every cue.');

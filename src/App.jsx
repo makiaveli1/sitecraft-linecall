@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useReducer, useRef } from 'react';
 
 import { CUES, SHOW_META } from './data.js';
-import { ProductLead, ShowPulse } from './presentation.jsx';
+import { ShowPulse } from './presentation.jsx';
 import { SEGMENTS, compareRetimeStrategies, createRunSnapshot, previewSegmentRetime } from './schedule.js';
 import {
   DEPARTMENTS,
@@ -13,7 +13,7 @@ import {
 } from './state.js';
 import { registerLinecallWebMCP } from './webmcp.js';
 import {
-  DemoHero,
+  DemoProductBar,
   HomePage,
   NotFoundPage,
   ProductPage,
@@ -56,6 +56,7 @@ function CueRow({
   readiness,
   selected,
   segmentLabel,
+  previewChange,
   onSelect,
   onMove,
   onQuickReadiness,
@@ -63,7 +64,7 @@ function CueRow({
 }) {
   return (
     <li
-      className={`cue-row ${selected ? 'cue-row--selected' : ''} ${segmentLabel ? 'cue-row--segment-start' : ''} cue-row--${cue.runState}`}
+      className={`cue-row ${selected ? 'cue-row--selected' : ''} ${segmentLabel ? 'cue-row--segment-start' : ''} ${previewChange ? 'cue-row--preview-shift' : ''} cue-row--${cue.runState}`}
       data-department={cue.department}
     >
       <span className="cue-rail" aria-hidden="true" />
@@ -84,6 +85,11 @@ function CueRow({
           {segmentLabel ? <span className="cue-segment-label">{segmentLabel}</span> : null}
           <span className="cue-label">{cue.label}</span>
           <span className="cue-instruction">{cue.instruction}</span>
+          {previewChange ? (
+            <span className="cue-preview-shift" aria-label={`Preview moves cue ${cueNumber(cue)} from ${previewChange.from} to ${previewChange.to}`}>
+              <b>PREVIEW</b><code>{previewChange.from} → {previewChange.to}</code>
+            </span>
+          ) : null}
           {cue.locked ? <span className="cue-lock-note">Human lock</span> : null}
         </span>
         <span className="cue-department" data-department={cue.department}>
@@ -390,6 +396,109 @@ function AgentCollaborationPanel({
   );
 }
 
+function DemoScenarioConsole({
+  revision,
+  preview,
+  comparison,
+  approvedPlanId,
+  receipts,
+  onStart,
+  onApprove,
+  onApply,
+  onReset,
+}) {
+  const latestReceipt = receipts[0] ?? null;
+  const applied = Boolean(latestReceipt && revision > 1);
+  const approved = Boolean(preview?.status === 'ready' && approvedPlanId === preview.planId);
+  const ready = preview?.status === 'ready';
+  const activeStep = applied ? 4 : approved ? 3 : ready ? 2 : 1;
+  const safeOption = comparison?.options?.find((option) => option.status === 'ready') ?? null;
+  const blockedOption = comparison?.options?.find((option) => option.status === 'blocked') ?? null;
+  const changedCueCount = preview?.changes?.length ?? latestReceipt?.changedCueCount ?? 0;
+
+  const stepClass = (step) => activeStep > step ? 'is-complete' : activeStep === step ? 'is-current' : '';
+
+  return (
+    <section className={`demo-scenario-console ${applied ? 'is-applied' : approved ? 'is-approved' : ready ? 'is-preview' : 'is-idle'}`} id="demo-scenario" aria-labelledby="demo-scenario-title">
+      <div className="demo-scenario-console__top">
+        <div>
+          <p className="eyebrow">Guided pressure test</p>
+          <h2 id="demo-scenario-title">Make Audience Q&amp;A two seconds late.</h2>
+          <p>Watch LINECALL compare two futures, light up every cue that would move, stop for your approval, then advance the run from R1 to R2.</p>
+        </div>
+        <div className="demo-scenario-console__state" aria-live="polite">
+          <small>CURRENT STATE</small>
+          <strong>{applied ? `R${revision} · APPLIED` : approved ? 'APPROVED · APPLY OPEN' : ready ? `${changedCueCount} CUES · PREVIEW` : `R${revision} · READY`}</strong>
+        </div>
+      </div>
+
+      <ol className="demo-scenario-rail" aria-label="Guided LINECALL scenario progress">
+        <li className={stepClass(1)}><span>01</span><div><strong>Pressure</strong><small>Q&amp;A +2 seconds</small></div></li>
+        <li className={stepClass(2)}><span>02</span><div><strong>Compare + preview</strong><small>Two futures · exact cue impact</small></div></li>
+        <li className={stepClass(3)}><span>03</span><div><strong>Human approval</strong><small>One plan · one revision</small></div></li>
+        <li className={stepClass(4)}><span>04</span><div><strong>R2 receipt</strong><small>Apply once · authority closes</small></div></li>
+      </ol>
+
+      <div className="demo-scenario-visual">
+        <div className="demo-scenario-visual__request">
+          <span>LIVE CHANGE</span>
+          <strong>Q&amp;A</strong>
+          <b>+2s</b>
+          <small>Audience interaction needs two more seconds.</small>
+        </div>
+
+        <div className="demo-scenario-visual__fork" aria-label="Timing strategy comparison">
+          <article className={blockedOption ? 'is-blocked' : ''}>
+            <span>FUTURE A</span>
+            <strong>Segment only</strong>
+            <b>{blockedOption ? 'BLOCKED' : '—'}</b>
+            <small>{blockedOption?.conflicts?.[0]?.message ?? 'Waiting for the pressure test.'}</small>
+          </article>
+          <article className={safeOption ? 'is-safe' : ''}>
+            <span>FUTURE B</span>
+            <strong>Ripple downstream</strong>
+            <b>{safeOption ? 'SAFE' : '—'}</b>
+            <small>{safeOption ? `${safeOption.changedCueCount} cues move together and active constraints stay satisfied.` : 'Waiting for the pressure test.'}</small>
+          </article>
+        </div>
+
+        <div className="demo-impact-map" aria-label="Previewed downstream cue impact">
+          <div className="demo-impact-map__heading"><span>DOWNSTREAM IMPACT</span><b>{changedCueCount || '—'} cues</b></div>
+          <div className="demo-impact-map__nodes">
+            {preview?.changes?.length ? preview.changes.map((change, index) => (
+              <span key={change.cueId} style={{ '--impact-index': index }} title={`${change.label}: ${change.from} to ${change.to}`}>
+                Q{String(change.cueNumber).padStart(3, '0')}
+              </span>
+            )) : Array.from({ length: 13 }, (_, index) => <span key={index} className="is-placeholder">{String(index + 1).padStart(2, '0')}</span>)}
+          </div>
+          <small>{ready ? 'Every highlighted cue below shows its projected time before the live run changes.' : applied ? 'The approved projection is now the live R2 schedule.' : 'Run the pressure test to reveal the exact cue chain.'}</small>
+        </div>
+      </div>
+
+      <div className="demo-scenario-console__action">
+        {!ready && !applied ? (
+          <button type="button" className="demo-scenario-primary" data-demo-action="start" onClick={onStart}>Run the +2s pressure test</button>
+        ) : ready && !approved ? (
+          <button type="button" className="demo-scenario-primary" data-demo-action="approve" onClick={onApprove}>Approve this exact {changedCueCount}-cue plan</button>
+        ) : approved ? (
+          <button type="button" className="demo-scenario-primary" data-demo-action="apply" onClick={onApply}>Show the guarded R2 outcome</button>
+        ) : (
+          <button type="button" className="demo-scenario-primary" data-demo-action="reset" onClick={onReset}>Reset and replay from R1</button>
+        )}
+        <p>
+          {approved
+            ? 'Guided mode calls LINECALL’s same guarded apply handler. In a WebMCP-capable browser, the agent receives this one-time capability after your approval.'
+            : applied
+              ? latestReceipt?.summary ?? 'The approved plan was applied once and the run advanced.'
+              : ready
+                ? 'Nothing has moved yet. The projected times are visible in the cue score below.'
+                : 'This uses the real deterministic planner on the current run. No prerecorded animation.'}
+        </p>
+      </div>
+    </section>
+  );
+}
+
 export function App() {
   const initialState = useMemo(() => createInitialState(CUES), []);
   const [state, dispatch] = useReducer(appReducer, initialState);
@@ -420,6 +529,10 @@ export function App() {
       offsetSeconds: preview.offsetSeconds,
     });
   }, [state.schedule, state.revision, state.retimePreview]);
+  const previewChangesByCueId = useMemo(
+    () => new Map((state.retimePreview?.changes ?? []).map((change) => [change.cueId, change])),
+    [state.retimePreview],
+  );
 
   webmcpApiRef.current = {
     getSnapshot() {
@@ -564,6 +677,37 @@ export function App() {
     dispatch({ type: 'RESET', initialState });
   }
 
+  function startGuidedScenario() {
+    const current = stateRef.current;
+    const comparison = compareRetimeStrategies({
+      schedule: current.schedule,
+      revision: current.revision,
+      expectedRevision: current.revision,
+      segmentId: 'qa',
+      offsetSeconds: 2,
+    });
+    const mode = comparison.recommendedMode ?? 'ripple_after';
+    const plan = previewSegmentRetime({
+      schedule: current.schedule,
+      revision: current.revision,
+      expectedRevision: current.revision,
+      segmentId: 'qa',
+      offsetSeconds: 2,
+      mode,
+    });
+    dispatch({ type: 'SET_RETIME_PREVIEW', plan });
+  }
+
+  function applyGuidedScenario() {
+    const current = stateRef.current;
+    const plan = current.retimePreview;
+    if (!plan || current.approvedPlanId !== plan.planId) return;
+    webmcpApiRef.current?.applyApprovedRetime({
+      planId: plan.planId,
+      expectedRevision: current.revision,
+    });
+  }
+
   const activeFilterCount = state.departments.length + (state.query.trim() ? 1 : 0);
   const routeBase = import.meta.env.BASE_URL.replace(/\/$/, '');
   const rawPathname = routeBase && window.location.pathname.startsWith(routeBase)
@@ -602,10 +746,21 @@ export function App() {
   }, [meta.description, meta.title]);
 
   return (
-    <div className="site-shell" id="top">
-      <SiteNav webmcp={state.webmcp} currentPath={pathname} />
+    <div className={`site-shell ${pathname === '/demo' ? 'site-shell--product-demo' : ''}`} id="top">
+      {pathname === '/demo' ? (
+        <DemoProductBar
+          revision={state.revision}
+          webmcp={state.webmcp}
+          showTitle={SHOW_META.title}
+          hold={state.hold}
+          onToggleHold={() => dispatch({ type: 'TOGGLE_HOLD' })}
+          onReset={resetFixture}
+        />
+      ) : (
+        <SiteNav webmcp={state.webmcp} currentPath={pathname} />
+      )}
 
-      <main className="site-main" id="site-main" tabIndex="-1">
+      <main className={`site-main ${pathname === '/demo' ? 'site-main--product-demo' : ''}`} id="site-main" tabIndex="-1">
         {pathname === '/' && (
           <HomePage
             showMeta={SHOW_META}
@@ -625,36 +780,41 @@ export function App() {
         )}
 
         {pathname === '/demo' && (
-          <>
-            <DemoHero revision={state.revision} />
-            <section className="site-demo site-demo--route" id="live-demo" aria-labelledby="live-demo-title">
-              <div className={`app-shell ${state.detailOpen ? 'app-shell--detail-open' : ''} ${state.hold ? 'app-shell--hold' : ''}`}>
-      <ProductLead
-        showMeta={SHOW_META}
-        revision={state.revision}
-        hold={state.hold}
-        onToggleHold={() => dispatch({ type: 'TOGGLE_HOLD' })}
-      />
+          <section className="site-demo site-demo--route site-demo--product" id="live-demo" aria-labelledby="live-demo-title">
+            <div className={`app-shell app-shell--product-demo ${state.detailOpen ? 'app-shell--detail-open' : ''} ${state.hold ? 'app-shell--hold' : ''}`}>
+              <div className="demo-command-deck">
+                <DemoScenarioConsole
+                  revision={state.revision}
+                  preview={state.retimePreview}
+                  comparison={retimeComparison}
+                  approvedPlanId={state.approvedPlanId}
+                  receipts={state.receipts}
+                  onStart={startGuidedScenario}
+                  onApprove={() => dispatch({ type: 'APPROVE_RETIME_PREVIEW' })}
+                  onApply={applyGuidedScenario}
+                  onReset={resetFixture}
+                />
 
-      <ShowPulse
-        schedule={state.schedule}
-        sequence={sequence}
-        revision={state.revision}
-        hold={state.hold}
-      />
+                <ShowPulse
+                  schedule={state.schedule}
+                  sequence={sequence}
+                  revision={state.revision}
+                  hold={state.hold}
+                />
+              </div>
 
-      <AgentCollaborationPanel
-        webmcp={state.webmcp}
-        revision={state.revision}
-        preview={state.retimePreview}
-        comparison={retimeComparison}
-        approvedPlanId={state.approvedPlanId}
-        receipts={state.receipts}
-        onApprove={() => dispatch({ type: 'APPROVE_RETIME_PREVIEW' })}
-        onDismiss={() => dispatch({ type: 'DISMISS_RETIME_PREVIEW' })}
-      />
+              <AgentCollaborationPanel
+                webmcp={state.webmcp}
+                revision={state.revision}
+                preview={state.retimePreview}
+                comparison={retimeComparison}
+                approvedPlanId={state.approvedPlanId}
+                receipts={state.receipts}
+                onApprove={() => dispatch({ type: 'APPROVE_RETIME_PREVIEW' })}
+                onDismiss={() => dispatch({ type: 'DISMISS_RETIME_PREVIEW' })}
+              />
 
-      <div className="workspace" id="linecall-main" tabIndex="-1">
+              <div className="workspace" id="linecall-main" tabIndex="-1">
         <section className="score-panel" aria-labelledby="score-title">
           <div className="score-heading">
             <div>
@@ -739,6 +899,7 @@ export function App() {
                     readiness={state.readiness[cue.id]}
                     selected={cue.id === state.selectedCueId}
                     segmentLabel={segmentLabel}
+                    previewChange={previewChangesByCueId.get(cue.id) ?? null}
                     registerButton={registerCueButton}
                     onSelect={(event) => selectCue(cue.id, event)}
                     onMove={(event) => moveCueSelection(event, cue.id)}
@@ -776,16 +937,15 @@ export function App() {
             </button>
           </div>
         </details>
-      </footer>
-              </div>
-            </section>
-          </>
+              </footer>
+            </div>
+          </section>
         )}
 
         {!validRoutes.has(pathname) && <NotFoundPage />}
       </main>
 
-      <SiteFooter />
+      {pathname !== '/demo' ? <SiteFooter /> : null}
       <p className="sr-only" aria-live="polite" aria-atomic="true">
         {state.announcement}
       </p>

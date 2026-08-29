@@ -315,31 +315,34 @@ export function ProductPage({ sequence, revision }) {
   );
 }
 
-export function DemoHero({ revision }) {
+export function DemoProductBar({ revision, webmcp, showTitle, hold, onToggleHold, onReset }) {
   return (
-    <section className="demo-masthead demo-masthead--control-room" aria-labelledby="live-demo-title">
-      <div className="demo-masthead__copy">
-        <p className="site-kicker">Live desk / control room</p>
-        <h1 id="live-demo-title">This is the actual LINECALL product.</h1>
-        <p>Operate the cue score directly, or ask a WebMCP-aware agent to inspect and solve the run. Nothing below is a marketing mockup.</p>
-        <div className="demo-live-status" aria-label="Live desk status">
-          <span><i aria-hidden="true" /> LIVE RUN</span>
-          <span>R{revision}</span>
-          <span>32 CUES</span>
-          <span>HUMAN AUTHORITY ON</span>
+    <header className="demo-product-bar">
+      <a className="demo-product-bar__brand" href={routeHref('/')} aria-label="Exit LINECALL live desk">
+        <span className="site-nav__mark" aria-hidden="true">LC</span>
+        <span><strong>LINECALL</strong><small>LIVE DESK</small></span>
+      </a>
+
+      <div className="demo-product-bar__run">
+        <span className={`demo-product-bar__signal ${hold ? 'is-hold' : ''}`}><i aria-hidden="true" />{hold ? 'HOLD' : 'ON AIR'}</span>
+        <div>
+          <h1 id="live-demo-title">Live timing control</h1>
+          <span>{showTitle}</span>
         </div>
       </div>
 
-      <aside className="demo-scenario demo-scenario--briefing" aria-label="Recommended LINECALL demo scenario">
-        <div className="demo-scenario__top"><span>MISSION BRIEF · R{revision}</span><b>02 SEC DELAY</b></div>
-        <p>“Audience Q&amp;A needs to start two seconds later. Find the safest way to absorb that delay and show me the exact change before anything moves.”</p>
-        <div className="demo-scenario__path" aria-label="Expected authority path">
-          <span>Inspect</span><i aria-hidden="true">→</i><span>Compare</span><i aria-hidden="true">→</i><span>Preview</span><i aria-hidden="true">→</i><strong>Human decides</strong>
-        </div>
-      </aside>
+      <div className="demo-product-bar__telemetry" aria-label="Live desk telemetry">
+        <span><small>REVISION</small><b>R{revision}</b></span>
+        <span><small>WEBMCP</small><b>{webmcpStatusLabel(webmcp)}</b></span>
+        <span><small>AUTHORITY</small><b>Human gated</b></span>
+      </div>
 
-      <div className="demo-masthead__edge" aria-hidden="true">CONTROL ROOM / WEBMCP NATIVE / LIVE STATE</div>
-    </section>
+      <div className="demo-product-bar__actions">
+        <button type="button" className={`demo-hold-control ${hold ? 'is-hold' : ''}`} onClick={onToggleHold}>{hold ? 'Resume run' : 'Hold run'}</button>
+        <button type="button" onClick={onReset}>Reset scenario</button>
+        <a href={routeHref('/')}>Exit desk</a>
+      </div>
+    </header>
   );
 }
 

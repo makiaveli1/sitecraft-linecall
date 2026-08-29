@@ -49,8 +49,8 @@ test('declared dependency surface stays intentionally small and reproducible', (
   for (const required of [
     '"spaMode": true',
     "['index.html', 1366]",
-    "['assets/index-Biwm6Odh.css', 107291]",
-    "['assets/index-DGhrTz8S.js', 263058]",
+    "['assets/index-DSDj7sK6.css', 120992]",
+    "['assets/index-Dk6HlP5S.js', 268164]",
     "['linecall-authority-keyart.svg', 5587]",
     'linecall-authority-keyart.svg|image/svg+xml',
     "- 'src/**'",
@@ -124,7 +124,7 @@ test('site visual assets stay controlled, licensed, base-aware, and bounded', ()
   );
 
   const remoteMediaUrls = [...cssSource.matchAll(/https:\/\/images\.unsplash\.com\/[^\")]+/g)].map((match) => match[0]);
-  assert.equal(remoteMediaUrls.length, 6, 'The site should use only the three approved photographs across responsive/background variants.');
+  assert.equal(remoteMediaUrls.length, 5, 'The site should use only the three approved photographs across intentional responsive/background variants.');
   const approvedPhotoIds = [
     'photo-1761618291331-535983ae4296',
     'photo-1709731192032-5b67e7f7f4c5',
@@ -167,13 +167,13 @@ test('site architecture is route-based instead of one long-scroll page', () => {
   for (const route of ['/', '/product', '/demo', '/trust']) {
     assert.ok(appSource.includes(`'${route}'`), `Missing first-class route: ${route}`);
   }
-  for (const component of ['<HomePage', '<ProductPage', '<DemoHero', '<TrustPage', '<NotFoundPage', '<SiteFooter']) {
+  for (const component of ['<HomePage', '<ProductPage', '<DemoProductBar', '<TrustPage', '<NotFoundPage', '<SiteFooter']) {
     assert.ok(appSource.includes(component) || siteSource.includes(component), `Missing route component boundary: ${component}`);
   }
 
   assert.ok(siteSource.includes('When the show moves, LINECALL finds the time.'));
   assert.ok(siteSource.includes('A second caller for the timing problem, not the show.'));
-  assert.ok(siteSource.includes('This is the actual LINECALL product.'));
+  assert.ok(siteSource.includes('Live timing control'));
   assert.ok(siteSource.includes('Useful because the agent cannot quietly become the operator.'));
   assert.ok(siteSource.includes('4 → 5 → 4'));
   assert.ok(siteSource.includes('Agent can'));
@@ -182,7 +182,11 @@ test('site architecture is route-based instead of one long-scroll page', () => {
   assert.ok(siteSource.includes('className="pressure-chain"'));
   assert.ok(siteSource.includes('className="hero-live-card"'));
   assert.ok(siteSource.includes('className="product-lab__instrument"'), 'Product route must retain its timing-laboratory instrument');
-  assert.ok(siteSource.includes('className="demo-scenario demo-scenario--briefing"'), 'Live desk must retain its control-room mission briefing');
+  assert.ok(siteSource.includes('className="demo-product-bar"'), 'Live desk must render product chrome instead of the marketing navigation');
+  assert.ok(appSource.includes('className={`demo-scenario-console'), 'Live desk must expose the guided pressure-test console');
+  assert.ok(appSource.includes('data-demo-action="start"'), 'Live desk must expose a real guided-demo start action');
+  assert.ok(appSource.includes('cue-row--preview-shift'), 'Previewed timing changes must become visible inside the cue score');
+  assert.equal(appSource.includes('<DemoHero'), false, 'Live desk must not retain the old marketing masthead');
   assert.ok(siteSource.includes('className="trust-vault__cycle"'), 'Trust route must retain its 4→5→4 permission-vault opening');
   assert.ok(siteSource.includes('className="proof-ledger"'), 'Trust route must retain its executable proof ledger');
 
