@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "siteUrl": "https://open-sequin-22a2.here.now/",
+  "siteUrl": "https://verdant-ledger-zsxz.here.now/",
   "finalizeState": "live",
   "persistenceBeforeClaim": "expiring",
-  "claimCiphertext": "YQBAmheKrDujHn7sAzACjWkVvi80VTDEWFHBLaIBPZLkWan3rHjkuYaEHDWdNjWEiLVyZzS8trRoMkTrHkhpEuMDfx7bEs7iuGIWY2VbLjV+ghpAznB6SAhcqNEauktArYJdBOJ3GjMis1PnbLH/ei3c8GlYh5SEA8Nv/0fRdEzzyFbOr32wPvHvua7amzBph5B0v9TmkiOmJ+b3wSNV938U4FVHYK4kui6QUBR+d3fMCIFQemTf3RI4BgTNZGAKN8Ta4FXnkHeFPL0BoN0GdvmedTsBWcDXR6HdNDFhs2CQokbYK3bocbnimH78EC/8Uunr5F7x4Cuo8NkZ73DGeg==",
-  "sourceSha": "ec4076fc92268a289603b0af209b0557cf75c6c7",
-  "generatedAt": "2026-08-29T06:54:38.147Z"
+  "claimCiphertext": "Gba1Zye2GKtuhNmZjT2PcivwdX74qgmOxEwH4XLFhPb36LoPCk0LrnefRU+hC5roU5mOJPYbNchn95amk5JlnRhnWvVisKhgfqO0QnKnfRW8avf90ncQJi6m86wyglnJ6ZWuChxnBHq+xlh6RxUQ1+kKRUjp7caazrzUP+ac2y/99AeqOtp/LRPOt/zpPyNqx3iZVF6gQaB9B67d5Hr8mxkyhLf+h+Krp6Nxg7hUrlh+P5LDukbU5xh3NxZv+ocXwc7g+3hBzeJX/a3bxLLsaRSOcEIEbEZWRb3zHrJoT5DyrOXBe5xrsL6X41EUtPCeJvhE+uZ+N+/KC/+JuSoH4A==",
+  "sourceSha": "b9ea212e8e53bbdedcc7968c6ce21000de7e57d0",
+  "generatedAt": "2026-08-29T10:23:18.177Z"
 }
