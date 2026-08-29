@@ -9,11 +9,12 @@ const packageJson = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 
 const appSource = fs.readFileSync(path.join(ROOT, 'src/App.jsx'), 'utf8');
 const dataSource = fs.readFileSync(path.join(ROOT, 'src/data.js'), 'utf8');
 const mainSource = fs.readFileSync(path.join(ROOT, 'src/main.jsx'), 'utf8');
+const siteSource = fs.readFileSync(path.join(ROOT, 'src/site.jsx'), 'utf8');
 const cssSource = fs.readFileSync(path.join(ROOT, 'src/styles.css'), 'utf8');
 const indexSource = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 const viteSource = fs.readFileSync(path.join(ROOT, 'vite.config.js'), 'utf8');
 const pagesWorkflowSource = fs.readFileSync(path.join(ROOT, '.github/workflows/pages.yml'), 'utf8');
-const combinedSource = [appSource, dataSource, mainSource, cssSource, indexSource].join('\n').toLowerCase();
+const combinedSource = [appSource, dataSource, mainSource, siteSource, cssSource, indexSource].join('\n').toLowerCase();
 
 test('declared dependency surface stays intentionally small and reproducible', () => {
   assert.deepEqual(packageJson.dependencies, {
@@ -72,11 +73,19 @@ test('declared dependency surface stays intentionally small and reproducible', (
   }
 });
 
-test('first pass ships no image, video, canvas, or remote media surface', () => {
+test('site ships no image, video, canvas, iframe, or unapproved remote surface', () => {
   for (const forbidden of ['<img', '<video', '<canvas', '<iframe']) {
-    assert.equal(combinedSource.includes(forbidden), false, `${forbidden} is outside revision 2`);
+    assert.equal(combinedSource.includes(forbidden), false, `${forbidden} is outside the current site contract`);
   }
-  assert.equal(/https?:\/\//.test(combinedSource), false, 'No remote URL should appear in the first-pass client source');
+  const remoteUrls = [...siteSource.matchAll(/https?:\/\/[^"']+/g)].map((match) => match[0]);
+  assert.deepEqual(
+    [...new Set(remoteUrls)].sort(),
+    [
+      'https://developer.chrome.com/docs/ai/webmcp',
+      'https://github.com/makiaveli1/sitecraft-linecall',
+    ].sort(),
+    'Only the public source repository and official WebMCP documentation may be linked from the client site',
+  );
   assert.equal(combinedSource.includes('webgl'), false);
   assert.equal(combinedSource.includes('three.js'), false);
 });
@@ -98,10 +107,37 @@ test('application keeps the semantic and accessibility hooks declared by the con
       `Missing required first-pass hook: ${required}`,
     );
   }
-  assert.ok(indexSource.includes('href="#linecall-main"'));
+  assert.ok(indexSource.includes('href="#site-main"'));
+  assert.ok(appSource.includes('id="site-main" tabIndex="-1"'));
   assert.ok(appSource.includes('id="linecall-main" tabIndex="-1"'));
   assert.ok(indexSource.includes('<noscript>'));
   assert.ok(indexSource.includes('JavaScript is required for the LINECALL cue desk.'));
+});
+
+test('site architecture explains the product before the live cue desk', () => {
+  assert.equal((siteSource.match(/<h1/g) ?? []).length, 1, 'The React site should have exactly one primary heading');
+  assert.ok(siteSource.includes('Run the show. Let the agent solve the timing.'));
+  assert.ok(siteSource.includes('LINECALL helps a live-event team keep the show on time.'));
+  assert.ok(siteSource.includes('You decide whether anything moves.'));
+  assert.ok(siteSource.includes('4 → 5 → 4'));
+  assert.ok(siteSource.includes('Agent can'));
+  assert.ok(siteSource.includes('Agent cannot'));
+  for (const required of [
+    '<SiteNav',
+    '<SiteHero',
+    '<ProductMeaningSection',
+    '<HowItWorksSection',
+    'id="live-demo"',
+    '<SafetySection',
+    '<ProofSection',
+    '<FinalCallToAction',
+    '<SiteFooter',
+  ]) {
+    assert.ok(appSource.includes(required) || siteSource.includes(required), `Missing site architecture boundary: ${required}`);
+  }
+  assert.ok(cssSource.includes('.site-hero'));
+  assert.ok(cssSource.includes('.site-section--how'));
+  assert.ok(cssSource.includes('.site-section--safety'));
 });
 
 test('source retains cue-score language and avoids generic dashboard/card framing', () => {

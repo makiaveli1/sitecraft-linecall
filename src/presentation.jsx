@@ -23,7 +23,7 @@ export function ProductLead({ showMeta, revision, hold, onToggleHold }) {
         </span>
         <div className="command-brand__copy">
           <p className="eyebrow">Production run · live cue desk</p>
-          <h1>LINECALL</h1>
+          <h2>LINECALL</h2>
           <p className="product-promise">
             Agent explores the timing. Deterministic rules verify it. You decide what moves.
           </p>

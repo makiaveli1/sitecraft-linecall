@@ -12,6 +12,17 @@ import {
   nextVisibleCueId,
 } from './state.js';
 import { registerLinecallWebMCP } from './webmcp.js';
+import {
+  DemoIntro,
+  FinalCallToAction,
+  HowItWorksSection,
+  ProductMeaningSection,
+  ProofSection,
+  SafetySection,
+  SiteFooter,
+  SiteHero,
+  SiteNav,
+} from './site.jsx';
 
 const DEPARTMENT_LABELS = {
   stage: 'Stage',
@@ -558,7 +569,23 @@ export function App() {
   const activeFilterCount = state.departments.length + (state.query.trim() ? 1 : 0);
 
   return (
-    <div className={`app-shell ${state.detailOpen ? 'app-shell--detail-open' : ''} ${state.hold ? 'app-shell--hold' : ''}`}>
+    <div className="site-shell" id="top">
+      <SiteNav webmcp={state.webmcp} />
+
+      <main className="site-main" id="site-main" tabIndex="-1">
+        <SiteHero
+          showMeta={SHOW_META}
+          sequence={sequence}
+          revision={state.revision}
+          webmcp={state.webmcp}
+          cueCount={state.schedule.length}
+        />
+        <ProductMeaningSection />
+        <HowItWorksSection />
+
+        <section className="site-demo" id="live-demo" aria-labelledby="live-demo-title">
+          <DemoIntro revision={state.revision} />
+          <div className={`app-shell ${state.detailOpen ? 'app-shell--detail-open' : ''} ${state.hold ? 'app-shell--hold' : ''}`}>
       <ProductLead
         showMeta={SHOW_META}
         revision={state.revision}
@@ -584,7 +611,7 @@ export function App() {
         onDismiss={() => dispatch({ type: 'DISMISS_RETIME_PREVIEW' })}
       />
 
-      <main className="workspace" id="linecall-main" tabIndex="-1">
+      <div className="workspace" id="linecall-main" tabIndex="-1">
         <section className="score-panel" aria-labelledby="score-title">
           <div className="score-heading">
             <div>
@@ -691,7 +718,7 @@ export function App() {
           headingRef={inspectorHeadingRef}
           unavailable={state.dataState === 'error'}
         />
-      </main>
+      </div>
 
       <footer className="fixture-footer">
         <details>
@@ -707,7 +734,15 @@ export function App() {
           </div>
         </details>
       </footer>
+          </div>
+        </section>
 
+        <SafetySection />
+        <ProofSection webmcp={state.webmcp} cueCount={state.schedule.length} />
+        <FinalCallToAction />
+      </main>
+
+      <SiteFooter />
       <p className="sr-only" aria-live="polite" aria-atomic="true">
         {state.announcement}
       </p>
