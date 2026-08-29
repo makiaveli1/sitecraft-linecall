@@ -1,9 +1,10 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
+  "deploymentMode": "owned-update",
+  "siteSlug": "grassy-lotus-7dr8",
   "siteUrl": "https://grassy-lotus-7dr8.here.now/",
   "finalizeState": "live",
-  "persistenceBeforeClaim": "expiring",
-  "claimCiphertext": "cl+V8Rl0FTJXF6qypbvH8rkM2x8xB1Xd+ImQr39ra/T6IGVO66QItptRVpYb8ts6DTdNvO4H8k3y6AIfWWg4FKhGPuDlUsmgkmGU5HgPeL/AltLwjA+7bkDvAeqM4xhC3t7IGvpsJ2iXSFgXHkZKqXb/1YrerCnJY9PTtVCh2ao63ThsPPnB4aUcT3536/cOIsHFK3jVhhWb4M7Ck32UWCpYYYlkzq6inSFNqDpTxbG7PaMM9+c+xxtLCl8/1eapLH0pFaR0xBWtFyWMZ6+0vNlPn9rWFbEPjSIuA9Jj6k5GMu9Ga684saCEg2V7wMXc++mA1G3mmmzUWWSgrH1svQ==",
-  "sourceSha": "f3d517d9f7ab7a7f6c7ed6e743ff9f9e54b13c2b",
-  "generatedAt": "2026-08-29T11:26:00.254Z"
+  "persistence": "permanent",
+  "sourceSha": "6943dbbcbed811a5569a51f6edccebc2544e2557",
+  "generatedAt": "2026-08-29T13:12:36.007Z"
 }
