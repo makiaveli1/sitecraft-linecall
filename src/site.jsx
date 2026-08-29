@@ -1,10 +1,23 @@
 import React from 'react';
 
+const ROUTE_BASE = import.meta.env.BASE_URL.endsWith('/')
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+
+export function routeHref(pathname = '/') {
+  const route = pathname === '/' ? '' : pathname.replace(/^\/+/, '');
+  return `${ROUTE_BASE}${route}`;
+}
+
+export function assetHref(filename) {
+  return `${ROUTE_BASE}${filename.replace(/^\/+/, '')}`;
+}
+
 function cueNumber(cue) {
   return cue ? String(cue.number).padStart(3, '0') : '—';
 }
 
-function webmcpStatusLabel(webmcp) {
+export function webmcpStatusLabel(webmcp) {
   if (webmcp?.status === 'registered' && webmcp.browserVerified) return 'Browser verified';
   if (webmcp?.status === 'registered') return 'Tools registered';
   if (webmcp?.status === 'unsupported') return 'WebMCP browser needed';
@@ -12,11 +25,20 @@ function webmcpStatusLabel(webmcp) {
   return 'Checking WebMCP';
 }
 
-export function SiteNav({ webmcp }) {
+function NavLink({ href, currentPath, children }) {
+  const current = href === '/' ? currentPath === '/' : currentPath.startsWith(href);
+  return (
+    <a href={routeHref(href)} aria-current={current ? 'page' : undefined}>
+      {children}
+    </a>
+  );
+}
+
+export function SiteNav({ webmcp, currentPath = '/' }) {
   return (
     <header className="site-nav-wrap">
       <nav className="site-nav" aria-label="Primary navigation">
-        <a className="site-nav__brand" href="#top" aria-label="LINECALL home">
+        <a className="site-nav__brand" href={routeHref('/')} aria-label="LINECALL home">
           <span className="site-nav__mark" aria-hidden="true">LC</span>
           <span>
             <strong>LINECALL</strong>
@@ -25,11 +47,9 @@ export function SiteNav({ webmcp }) {
         </a>
 
         <div className="site-nav__links">
-          <a href="#what-it-does">What it does</a>
-          <a href="#how-it-works">How it works</a>
-          <a href="#live-demo">Live desk</a>
-          <a href="#safety">Safety</a>
-          <a href="#proof">Proof</a>
+          <NavLink href="/product" currentPath={currentPath}>Product</NavLink>
+          <NavLink href="/demo" currentPath={currentPath}>Live desk</NavLink>
+          <NavLink href="/trust" currentPath={currentPath}>Trust + proof</NavLink>
         </div>
 
         <div className="site-nav__actions">
@@ -37,211 +57,244 @@ export function SiteNav({ webmcp }) {
             <i aria-hidden="true" />
             {webmcpStatusLabel(webmcp)}
           </span>
-          <a className="site-button site-button--compact" href="#live-demo">Open live desk</a>
+          <a className="site-button site-button--compact" href={routeHref('/demo')}>Run the demo</a>
         </div>
       </nav>
     </header>
   );
 }
 
-export function SiteHero({ showMeta, sequence, revision, webmcp, cueCount }) {
-  const toolCount = webmcp?.status === 'registered' ? webmcp.toolCount : 4;
-  const toolStatus = webmcp?.status === 'registered' ? `${toolCount} tools active` : '4-tool base contract';
+function ArrowLink({ href, children }) {
+  return (
+    <a className="site-text-link" href={routeHref(href)}>
+      {children} <span aria-hidden="true">↗</span>
+    </a>
+  );
+}
+
+function StageVisual({ sequence, revision, className = '' }) {
+  return (
+    <figure className={`stage-visual ${className}`.trim()}>
+      <img
+        src={assetHref('linecall-stage-keyart.svg')}
+        alt="Abstract live production control desk facing a stage under lime and amber light beams"
+      />
+      <figcaption className="stage-visual__hud">
+        <div className="stage-visual__live"><i aria-hidden="true" /> Live run</div>
+        <div className="stage-visual__cue">
+          <span>NOW</span>
+          <strong>Q{cueNumber(sequence?.current)}</strong>
+          <b>{sequence?.current?.label ?? 'Waiting for cue'}</b>
+        </div>
+        <div className="stage-visual__next">
+          <span>NEXT</span>
+          <b>Q{cueNumber(sequence?.next)} · {sequence?.next?.label ?? 'No next cue'}</b>
+        </div>
+        <span className="stage-visual__revision">R{revision}</span>
+      </figcaption>
+    </figure>
+  );
+}
+
+export function HomePage({ showMeta, sequence, revision, webmcp, cueCount }) {
+  const activeTools = webmcp?.status === 'registered' ? webmcp.toolCount : 4;
 
   return (
-    <section className="site-hero" id="what-it-does" aria-labelledby="site-hero-title">
-      <div className="site-hero__copy">
-        <p className="site-kicker">For producers and live-event teams</p>
-        <h1 id="site-hero-title">Run the show. Let the agent solve the timing.</h1>
-        <p className="site-hero__lede">
-          LINECALL helps a live-event team keep the show on time. It tracks every production cue, shows what is happening now and next,
-          and gives an AI agent structured tools to find safe timing fixes when the plan changes. Rules check the proposal. You decide whether anything moves.
-        </p>
-
-        <div className="site-hero__actions">
-          <a className="site-button" href="#live-demo">Explore the working cue desk</a>
-          <a className="site-text-link" href="#how-it-works">See the agent control loop <span aria-hidden="true">↘</span></a>
+    <>
+      <section className="wow-hero" aria-labelledby="home-title">
+        <div className="wow-hero__copy">
+          <p className="site-kicker">AI-assisted live production control</p>
+          <h1 id="home-title">When the show moves, LINECALL finds the time.</h1>
+          <p className="wow-hero__lede">
+            A live-event cue system where an AI agent can inspect the run, compare timing fixes, and preview the exact downstream impact. Deterministic rules verify the plan. The human operator keeps the final call.
+          </p>
+          <div className="wow-hero__actions">
+            <a className="site-button site-button--hero" href={routeHref('/demo')}>Enter the live desk</a>
+            <ArrowLink href="/product">See how LINECALL works</ArrowLink>
+          </div>
+          <div className="wow-hero__signal" aria-label="LINECALL live product facts">
+            <span><b>{cueCount}</b> cues</span>
+            <span><b>4 → 5 → 4</b> authority lifecycle</span>
+            <span><b>R{revision}</b> current revision</span>
+            <span><b>{activeTools}</b> tools active</span>
+          </div>
         </div>
 
-        <dl className="site-hero__facts" aria-label="LINECALL at a glance">
-          <div>
-            <dt>{cueCount}</dt>
-            <dd>cues in one authoritative run</dd>
-          </div>
-          <div>
-            <dt>4 → 5 → 4</dt>
-            <dd>tools as human approval opens and closes</dd>
-          </div>
-          <div>
-            <dt>R{revision}</dt>
-            <dd>current schedule revision</dd>
-          </div>
-        </dl>
-      </div>
+        <StageVisual sequence={sequence} revision={revision} className="wow-hero__visual" />
+      </section>
 
-      <div className="hero-console" aria-label="LINECALL live run preview">
-        <div className="hero-console__topline">
-          <div>
-            <span className="hero-console__live"><i aria-hidden="true" /> On air</span>
-            <strong>{showMeta.title}</strong>
-          </div>
-          <span className="hero-console__revision">R{revision}</span>
+      <section className="home-manifesto" aria-labelledby="manifesto-title">
+        <p className="site-kicker">The pressure point</p>
+        <h2 id="manifesto-title">Two seconds late can become twenty seconds late. LINECALL shows the chain before you touch it.</h2>
+        <div className="home-manifesto__copy">
+          <p>
+            Live shows do not fail because teams lack dashboards. They fail when one small change ripples through people, departments, locks, and a hard out faster than anyone can safely reason about it.
+          </p>
+          <ArrowLink href="/product">Follow the timing story</ArrowLink>
         </div>
+      </section>
 
-        <div className="hero-console__run">
-          <div className="hero-console__now">
-            <span>NOW</span>
-            <strong>Q{cueNumber(sequence.current)}</strong>
+      <section className="route-gallery" aria-labelledby="route-gallery-title">
+        <div className="route-gallery__intro">
+          <p className="site-kicker">Explore LINECALL</p>
+          <h2 id="route-gallery-title">See the run. Work the timing. Inspect the boundary.</h2>
+        </div>
+        <div className="route-gallery__grid">
+          <a className="route-tile route-tile--product" href={routeHref('/product')}>
+            <span className="route-tile__number">01</span>
             <div>
-              <b>{sequence.current?.label ?? 'No current cue'}</b>
-              <small>{sequence.current?.instruction ?? 'Waiting for the current cue.'}</small>
+              <small>PRODUCT</small>
+              <h3>Understand the timing engine</h3>
+              <p>See how run state, counterfactual planning, deterministic rules, and human authority fit together.</p>
             </div>
-          </div>
-          <div className="hero-console__next">
-            <span>NEXT</span>
-            <b>Q{cueNumber(sequence.next)} · {sequence.next?.label ?? 'No next cue'}</b>
-          </div>
+            <span className="route-tile__arrow" aria-hidden="true">↗</span>
+          </a>
+          <a className="route-tile route-tile--demo" href={routeHref('/demo')}>
+            <span className="route-tile__number">02</span>
+            <div>
+              <small>LIVE DESK</small>
+              <h3>Operate the actual product</h3>
+              <p>Work the cue score, inspect the run, and use the real WebMCP-powered timing workflow.</p>
+            </div>
+            <span className="route-tile__arrow" aria-hidden="true">↗</span>
+          </a>
+          <a className="route-tile route-tile--trust" href={routeHref('/trust')}>
+            <span className="route-tile__number">03</span>
+            <div>
+              <small>TRUST + PROOF</small>
+              <h3>Inspect the authority boundary</h3>
+              <p>See exactly what the agent can do, what it cannot do, and the executable evidence behind that claim.</p>
+            </div>
+            <span className="route-tile__arrow" aria-hidden="true">↗</span>
+          </a>
         </div>
+      </section>
 
-        <div className="hero-console__agent">
-          <div className="hero-console__agent-head">
-            <span>AGENT REQUEST</span>
-            <em>{toolStatus}</em>
-          </div>
-          <p>“Audience Q&amp;A needs to start two seconds later. Find the safest fix and show me the exact change first.”</p>
-          <ol aria-label="Agent collaboration path">
-            <li><span>01</span><b>Read the run</b></li>
-            <li><span>02</span><b>Compare options</b></li>
-            <li><span>03</span><b>Preview exact changes</b></li>
-            <li className="is-human"><span>04</span><b>Wait for your approval</b></li>
-          </ol>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-export function ProductMeaningSection() {
-  return (
-    <section className="site-section site-section--meaning" aria-labelledby="meaning-title">
-      <div className="site-section__intro">
-        <p className="site-kicker">What LINECALL actually changes</p>
-        <h2 id="meaning-title">AI helps with the hard timing work without becoming the show caller.</h2>
-        <p>
-          Live production is full of small timing changes with large downstream consequences. LINECALL gives the agent enough structure
-          to reason about those changes, while keeping the real run, safety rules, and final authority visible to the operator.
-        </p>
-      </div>
-
-      <div className="meaning-grid">
-        <article>
-          <span className="meaning-grid__index">01</span>
-          <h3>One run stays authoritative</h3>
-          <p>Now, next, cue locks, readiness, hard out, and schedule revision all live in the same visible operating surface.</p>
-        </article>
-        <article>
-          <span className="meaning-grid__index">02</span>
-          <h3>The agent reasons over structure</h3>
-          <p>Instead of guessing from buttons and text, the browser exposes focused WebMCP tools for the actual production job.</p>
-        </article>
-        <article>
-          <span className="meaning-grid__index">03</span>
-          <h3>Advice is separate from authority</h3>
-          <p>LINECALL can reject unsafe timing plans before the operator sees them. The agent cannot approve itself or remove a human lock.</p>
-        </article>
-      </div>
-    </section>
-  );
-}
-
-export function HowItWorksSection() {
-  return (
-    <section className="site-section site-section--how" id="how-it-works" aria-labelledby="how-title">
-      <div className="site-section__intro site-section__intro--split">
+      <section className="home-endcap" aria-labelledby="home-endcap-title">
         <div>
-          <p className="site-kicker">The control loop</p>
-          <h2 id="how-title">Four tools to explore. One temporary tool to act.</h2>
+          <p className="site-kicker">Built for the moment the plan changes</p>
+          <h2 id="home-endcap-title">The agent explores. The rules verify. You call the show.</h2>
         </div>
-        <p>
-          LINECALL uses WebMCP so the browser can expose a small set of structured actions to an AI agent. The consequential apply tool
-          does not exist until the operator approves one exact plan, and it disappears again after use.
-        </p>
-      </div>
-
-      <ol className="how-grid">
-        <li>
-          <span className="how-grid__number">01</span>
-          <div>
-            <p className="how-grid__meta">4 tools</p>
-            <h3>Read and explore</h3>
-            <p>The agent reads the current revision, compares timing strategies, previews exact changes, or updates low-risk readiness.</p>
-          </div>
-        </li>
-        <li>
-          <span className="how-grid__number">02</span>
-          <div>
-            <p className="how-grid__meta">Deterministic check</p>
-            <h3>Rules verify the plan</h3>
-            <p>Chronology, hard out, department spacing, stale revisions, and human locks are checked by code, not by model confidence.</p>
-          </div>
-        </li>
-        <li className="how-grid__human">
-          <span className="how-grid__number">03</span>
-          <div>
-            <p className="how-grid__meta">5 tools</p>
-            <h3>You approve one exact plan</h3>
-            <p>Your approval is bound to the visible plan ID and current revision. Only then does the one-time apply capability appear.</p>
-          </div>
-        </li>
-        <li>
-          <span className="how-grid__number">04</span>
-          <div>
-            <p className="how-grid__meta">Back to 4</p>
-            <h3>The change applies once</h3>
-            <p>The schedule advances to a new revision, a receipt is left behind, and the temporary apply capability closes again.</p>
-          </div>
-        </li>
-      </ol>
-
-      <div className="tool-lifecycle" aria-label="WebMCP tool lifecycle">
-        <div><strong>4</strong><span>inspect · compare · preview · readiness</span></div>
-        <i aria-hidden="true">→</i>
-        <div className="tool-lifecycle__approval"><strong>5</strong><span>human-approved apply tool opens</span></div>
-        <i aria-hidden="true">→</i>
-        <div><strong>4</strong><span>apply consumed · authority closes</span></div>
-      </div>
-    </section>
+        <a className="site-button" href={routeHref('/demo')}>Open LINECALL</a>
+      </section>
+    </>
   );
 }
 
-export function DemoIntro({ revision }) {
+function ProductRunVisual({ sequence, revision }) {
   return (
-    <div className="demo-intro">
-      <div>
-        <p className="site-kicker">The actual working product</p>
-        <h2 id="live-demo-title">Operate the run, then ask the agent to solve a timing problem.</h2>
+    <div className="product-run-visual" aria-label="LINECALL run snapshot illustration">
+      <div className="product-run-visual__top">
+        <span><i aria-hidden="true" /> authoritative run</span>
+        <b>R{revision}</b>
       </div>
-      <div className="demo-scenario" aria-label="Recommended LINECALL demo scenario">
-        <span>DEMO PATH · R{revision}</span>
-        <p>Ask for Audience Q&amp;A to start two seconds later. LINECALL should compare two strategies, reject the unsafe one, preview the safe ripple, and stop for human approval.</p>
+      <div className="product-run-visual__now">
+        <span>NOW</span>
+        <strong>Q{cueNumber(sequence?.current)}</strong>
+        <div><b>{sequence?.current?.label}</b><small>{sequence?.current?.instruction}</small></div>
       </div>
+      <div className="product-run-visual__timeline" aria-hidden="true">
+        <i className="is-done" /><i className="is-current" /><i /><i />
+      </div>
+      <div className="product-run-visual__labels"><span>Pre-show</span><b>Opening</b><span>Q&amp;A</span><span>Panel</span></div>
     </div>
   );
 }
 
-export function SafetySection() {
+export function ProductPage({ sequence, revision }) {
   return (
-    <section className="site-section site-section--safety" id="safety" aria-labelledby="safety-title">
-      <div className="site-section__intro">
-        <p className="site-kicker">Designed around the trust boundary</p>
-        <h2 id="safety-title">The agent is useful because its authority is narrow.</h2>
+    <>
+      <section className="page-masthead page-masthead--product" aria-labelledby="product-title">
+        <p className="site-kicker">Product</p>
+        <h1 id="product-title">A second caller for the timing problem, not the show.</h1>
         <p>
-          LINECALL does not give the model a generic “control the page” permission. It exposes specific production capabilities and keeps
-          consequential authority in deterministic code and visible operator actions.
+          LINECALL combines one authoritative run, a constrained agent toolset, and deterministic scheduling rules so a producer can explore timing changes without handing the model final authority.
         </p>
-      </div>
+      </section>
 
-      <div className="authority-grid">
+      <section className="product-chapter product-chapter--run" aria-labelledby="run-chapter-title">
+        <div className="product-chapter__copy">
+          <span className="chapter-index">01 / THE RUN</span>
+          <h2 id="run-chapter-title">The agent starts from the same live state as the operator.</h2>
+          <p>Current cue, next cue, human locks, readiness, segment boundaries, hard out, and revision all come from one run snapshot. No shadow version of the schedule exists.</p>
+        </div>
+        <ProductRunVisual sequence={sequence} revision={revision} />
+      </section>
+
+      <section className="product-chapter product-chapter--reason" aria-labelledby="reason-chapter-title">
+        <div className="product-chapter__visual">
+          <div className="counterfactual-board">
+            <div className="counterfactual-board__request">Q&amp;A +2s</div>
+            <div className="counterfactual-board__option is-blocked"><span>SEGMENT ONLY</span><b>Blocked</b><small>chronology breaks</small></div>
+            <div className="counterfactual-board__option is-ready"><span>RIPPLE AFTER</span><b>Safe</b><small>13 exact cue changes</small></div>
+            <div className="counterfactual-board__result"><i aria-hidden="true" /> Recommend safe ripple</div>
+          </div>
+        </div>
+        <div className="product-chapter__copy">
+          <span className="chapter-index">02 / THE REASONING</span>
+          <h2 id="reason-chapter-title">Compare futures before the run becomes one of them.</h2>
+          <p>The agent can ask LINECALL to evaluate alternative timing strategies. The application calculates the consequences and rejects plans that violate chronology, locks, spacing, stale revisions, or hard out.</p>
+        </div>
+      </section>
+
+      <section className="product-chapter product-chapter--authority" aria-labelledby="authority-chapter-title">
+        <div className="product-chapter__copy">
+          <span className="chapter-index">03 / THE DECISION</span>
+          <h2 id="authority-chapter-title">Consequential authority appears only after a human approves one exact plan.</h2>
+          <p>The apply tool is absent while the agent explores. Approval binds one visible plan to one revision. The capability opens, applies once, advances the revision, leaves a receipt, and closes again.</p>
+          <ArrowLink href="/trust">Inspect the trust boundary</ArrowLink>
+        </div>
+        <figure className="authority-art">
+          <img src={assetHref('linecall-authority-keyart.svg')} alt="Diagram of the LINECALL four tools to five tools to four tools human approval lifecycle" />
+        </figure>
+      </section>
+
+      <section className="product-cta">
+        <p>Enough explanation.</p>
+        <h2>Put two seconds of pressure on the real desk.</h2>
+        <a className="site-button" href={routeHref('/demo')}>Run the live scenario</a>
+      </section>
+    </>
+  );
+}
+
+export function DemoHero({ revision }) {
+  return (
+    <section className="demo-masthead" aria-labelledby="live-demo-title">
+      <div>
+        <p className="site-kicker">Live desk</p>
+        <h1 id="live-demo-title">This is the actual LINECALL product.</h1>
+        <p>Operate the cue score directly, or ask a WebMCP-aware agent to inspect and solve the run. Nothing below is a marketing mockup.</p>
+      </div>
+      <div className="demo-scenario" aria-label="Recommended LINECALL demo scenario">
+        <span>RECOMMENDED SCENARIO · R{revision}</span>
+        <p>“Audience Q&amp;A needs to start two seconds later. Find the safest way to absorb that delay and show me the exact change before anything moves.”</p>
+      </div>
+    </section>
+  );
+}
+
+export function TrustPage({ webmcp, cueCount }) {
+  return (
+    <>
+      <section className="page-masthead page-masthead--trust" aria-labelledby="trust-title">
+        <p className="site-kicker">Trust + proof</p>
+        <h1 id="trust-title">Useful because the agent cannot quietly become the operator.</h1>
+        <p>LINECALL narrows model authority at the product boundary. Tool availability changes with human state, deterministic rules own scheduling safety, and every consequential apply is bound to an exact revision and plan.</p>
+      </section>
+
+      <section className="trust-art-section" aria-labelledby="lifecycle-title">
+        <div className="trust-art-section__copy">
+          <span className="chapter-index">THE AUTHORITY LIFECYCLE</span>
+          <h2 id="lifecycle-title">4 → 5 → 4 is a permission story, not a visual effect.</h2>
+          <p>Four tools are available for inspection, comparison, preview, and readiness. The fifth exists only while one exact human-approved plan remains valid.</p>
+        </div>
+        <figure className="authority-art authority-art--wide">
+          <img src={assetHref('linecall-authority-keyart.svg')} alt="LINECALL authority lifecycle showing four tools, human approval opening a fifth tool, then returning to four" />
+        </figure>
+      </section>
+
+      <section className="authority-grid authority-grid--page" aria-label="LINECALL agent authority boundaries">
         <article className="authority-grid__can">
           <p className="authority-grid__label">Agent can</p>
           <ul>
@@ -262,83 +315,60 @@ export function SafetySection() {
             <li>Bypass chronology or hard-out rules</li>
           </ul>
         </article>
-      </div>
-    </section>
+      </section>
+
+      <section className="proof-page" aria-labelledby="proof-title">
+        <div className="proof-page__headline">
+          <p className="site-kicker">Executable evidence</p>
+          <h2 id="proof-title">The claim is tested from source to browser.</h2>
+          <p>The attended native WebMCP proof is separate from the deterministic application test suite, so browser-native evidence is never silently replaced by a shim.</p>
+        </div>
+        <div className="proof-grid proof-grid--page">
+          <article><strong>30</strong><span>source + Chromium tests in the current release suite</span></article>
+          <article><strong>7 evals</strong><span>tool choice, ordering, negative cases, trust boundaries, and mutation</span></article>
+          <article><strong>{cueCount}</strong><span>stateful cues with locks, readiness, revisions, and receipts</span></article>
+          <article><strong>{webmcpStatusLabel(webmcp)}</strong><span>current browser WebMCP registration status</span></article>
+        </div>
+        <div className="proof-terminal" aria-label="LINECALL proof summary">
+          <span>&gt; linecall proof --native</span>
+          <b>4 tools → approval → 5 tools → apply once → R2 → 4 tools</b>
+          <span>Q014 lock preserved · cue-024 readiness mutable · receipt visible</span>
+        </div>
+      </section>
+
+      <section className="trust-endcap">
+        <h2>See the boundary operate instead of reading about it.</h2>
+        <a className="site-button" href={routeHref('/demo')}>Open the live desk</a>
+      </section>
+    </>
   );
 }
 
-export function ProofSection({ webmcp, cueCount }) {
+export function NotFoundPage() {
   return (
-    <section className="site-section site-section--proof" id="proof" aria-labelledby="proof-title">
-      <div className="site-section__intro site-section__intro--split">
-        <div>
-          <p className="site-kicker">Challenge evidence</p>
-          <h2 id="proof-title">The safety story is executable, not just copy.</h2>
-        </div>
-        <p>
-          LINECALL ships with deterministic schedule tests, real Chromium UI verification, WebMCP contract checks, and seven agent-eval cases.
-          The attended native WebMCP run remains a separate final proof gate before the challenge is frozen.
-        </p>
-      </div>
-
-      <div className="proof-grid">
-        <article><strong>30</strong><span>automated tests in the verified suite</span></article>
-        <article><strong>Real Chromium</strong><span>production rendering, interaction, responsive, and geometry checks</span></article>
-        <article><strong>7 evals</strong><span>tool choice, ordering, trust boundaries, mutation, and no-tool behavior</span></article>
-        <article><strong>{cueCount} cues</strong><span>a real stateful run with locks, readiness, revisions, and receipts</span></article>
-      </div>
-
-      <div className="proof-status">
-        <div>
-          <span>WebMCP runtime</span>
-          <strong>{webmcpStatusLabel(webmcp)}</strong>
-        </div>
-        <div>
-          <span>Mutation boundary</span>
-          <strong>Exact plan + exact revision + human approval</strong>
-        </div>
-        <div>
-          <span>Native attended proof</span>
-          <strong>Final challenge gate</strong>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-export function FinalCallToAction() {
-  return (
-    <section className="site-final" aria-labelledby="site-final-title">
-      <p className="site-kicker">See the boundary in action</p>
-      <h2 id="site-final-title">Give the agent a real timing problem. Keep the final call human.</h2>
-      <div>
-        <a className="site-button" href="#live-demo">Return to the live desk</a>
-        <a
-          className="site-text-link"
-          href="https://github.com/makiaveli1/sitecraft-linecall"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Inspect the source <span aria-hidden="true">↗</span>
-        </a>
-      </div>
+    <section className="not-found" aria-labelledby="not-found-title">
+      <p className="site-kicker">404 / off cue</p>
+      <h1 id="not-found-title">That route is not in the run of show.</h1>
+      <p>Return to LINECALL or enter the working live desk.</p>
+      <div><a className="site-button" href={routeHref('/')}>Go home</a><ArrowLink href="/demo">Open live desk</ArrowLink></div>
     </section>
   );
 }
 
 export function SiteFooter() {
   return (
-    <footer className="site-footer">
+    <footer className="site-footer site-footer--multipage">
       <div className="site-footer__brand">
         <span className="site-nav__mark" aria-hidden="true">LC</span>
-        <div><strong>LINECALL</strong><span>Agent-native live production control</span></div>
+        <div><strong>LINECALL</strong><span>Human-controlled AI for live production</span></div>
       </div>
+      <nav className="site-footer__links" aria-label="Footer navigation">
+        <a href={routeHref('/product')}>Product</a>
+        <a href={routeHref('/demo')}>Live desk</a>
+        <a href={routeHref('/trust')}>Trust + proof</a>
+        <a href="https://github.com/makiaveli1/sitecraft-linecall" target="_blank" rel="noreferrer">Source ↗</a>
+      </nav>
       <p>Built as an open-source WebMCP Challenge project. The operator remains the final authority over consequential timing changes.</p>
-      <div className="site-footer__links">
-        <a href="#top">Back to top</a>
-        <a href="https://developer.chrome.com/docs/ai/webmcp" target="_blank" rel="noreferrer">WebMCP docs</a>
-        <a href="https://github.com/makiaveli1/sitecraft-linecall" target="_blank" rel="noreferrer">GitHub</a>
-      </div>
     </footer>
   );
 }

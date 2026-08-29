@@ -13,15 +13,13 @@ import {
 } from './state.js';
 import { registerLinecallWebMCP } from './webmcp.js';
 import {
-  DemoIntro,
-  FinalCallToAction,
-  HowItWorksSection,
-  ProductMeaningSection,
-  ProofSection,
-  SafetySection,
+  DemoHero,
+  HomePage,
+  NotFoundPage,
+  ProductPage,
   SiteFooter,
-  SiteHero,
   SiteNav,
+  TrustPage,
 } from './site.jsx';
 
 const DEPARTMENT_LABELS = {
@@ -567,25 +565,70 @@ export function App() {
   }
 
   const activeFilterCount = state.departments.length + (state.query.trim() ? 1 : 0);
+  const routeBase = import.meta.env.BASE_URL.replace(/\/$/, '');
+  const rawPathname = routeBase && window.location.pathname.startsWith(routeBase)
+    ? window.location.pathname.slice(routeBase.length) || '/'
+    : window.location.pathname;
+  const pathname = rawPathname === '/'
+    ? '/'
+    : rawPathname.replace(/\/+$/, '') || '/';
+  const validRoutes = new Set(['/', '/product', '/demo', '/trust']);
+  const routeMeta = {
+    '/': {
+      title: 'LINECALL — Human-Controlled AI for Live Production',
+      description: 'LINECALL helps live-event teams solve timing changes with an AI agent while deterministic rules verify the plan and the human operator keeps final authority.',
+    },
+    '/product': {
+      title: 'Product — LINECALL',
+      description: 'See how LINECALL combines one authoritative run, counterfactual timing analysis, deterministic rules, and human approval.',
+    },
+    '/demo': {
+      title: 'Live Desk — LINECALL',
+      description: 'Operate the real LINECALL cue desk and explore its WebMCP-powered live-production timing workflow.',
+    },
+    '/trust': {
+      title: 'Trust + Proof — LINECALL',
+      description: 'Inspect LINECALL’s 4 → 5 → 4 authority lifecycle, deterministic safety boundary, browser proof, and agent eval contract.',
+    },
+  };
+  const meta = routeMeta[pathname] ?? {
+    title: 'Not Found — LINECALL',
+    description: 'This LINECALL route is not in the run of show.',
+  };
+
+  useEffect(() => {
+    document.title = meta.title;
+    document.querySelector('meta[name="description"]')?.setAttribute('content', meta.description);
+  }, [meta.description, meta.title]);
 
   return (
     <div className="site-shell" id="top">
-      <SiteNav webmcp={state.webmcp} />
+      <SiteNav webmcp={state.webmcp} currentPath={pathname} />
 
       <main className="site-main" id="site-main" tabIndex="-1">
-        <SiteHero
-          showMeta={SHOW_META}
-          sequence={sequence}
-          revision={state.revision}
-          webmcp={state.webmcp}
-          cueCount={state.schedule.length}
-        />
-        <ProductMeaningSection />
-        <HowItWorksSection />
+        {pathname === '/' && (
+          <HomePage
+            showMeta={SHOW_META}
+            sequence={sequence}
+            revision={state.revision}
+            webmcp={state.webmcp}
+            cueCount={state.schedule.length}
+          />
+        )}
 
-        <section className="site-demo" id="live-demo" aria-labelledby="live-demo-title">
-          <DemoIntro revision={state.revision} />
-          <div className={`app-shell ${state.detailOpen ? 'app-shell--detail-open' : ''} ${state.hold ? 'app-shell--hold' : ''}`}>
+        {pathname === '/product' && (
+          <ProductPage sequence={sequence} revision={state.revision} />
+        )}
+
+        {pathname === '/trust' && (
+          <TrustPage webmcp={state.webmcp} cueCount={state.schedule.length} />
+        )}
+
+        {pathname === '/demo' && (
+          <>
+            <DemoHero revision={state.revision} />
+            <section className="site-demo site-demo--route" id="live-demo" aria-labelledby="live-demo-title">
+              <div className={`app-shell ${state.detailOpen ? 'app-shell--detail-open' : ''} ${state.hold ? 'app-shell--hold' : ''}`}>
       <ProductLead
         showMeta={SHOW_META}
         revision={state.revision}
@@ -734,12 +777,12 @@ export function App() {
           </div>
         </details>
       </footer>
-          </div>
-        </section>
+              </div>
+            </section>
+          </>
+        )}
 
-        <SafetySection />
-        <ProofSection webmcp={state.webmcp} cueCount={state.schedule.length} />
-        <FinalCallToAction />
+        {!validRoutes.has(pathname) && <NotFoundPage />}
       </main>
 
       <SiteFooter />
