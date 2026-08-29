@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "siteUrl": "https://smooth-portal-gdkz.here.now/",
+  "siteUrl": "https://open-sequin-22a2.here.now/",
   "finalizeState": "live",
   "persistenceBeforeClaim": "expiring",
-  "claimCiphertext": "YqB1Kw0DGqlnWyTtdagOa1a7ci825wmItilHMQ5aZcsuN9leGu+JA2CeRtWTygHrAJa3xlpmIeFfWpD5Vp7LKuzYhlfqoVyizbfVivjFTyEwBQwwNk/X3TxyxzRBVjj4szWqkQ4Cll6DgLnmQHS7enESGvBpJiZHfZ/qspUWsTO83r9XIWLw3hsb6qVRLxHF5wXD4qaxAXfT3aPhoT0YHjiucFKxbxVo4R0dmh05pXFs0hFXr1r6gJERPavu8HfimkTLn7NOmP7v2x/yYTe/Pb+XVnAGnWQvaPOZ0STV0e5mcPsylcE8meUavF7OAZo1YlcvFDmJmgw5oGiALnIPqQ==",
-  "sourceSha": "a1aaf900e41d062cf8ea4ed8413a4058e4378d37",
-  "generatedAt": "2026-08-29T06:06:04.438Z"
+  "claimCiphertext": "YQBAmheKrDujHn7sAzACjWkVvi80VTDEWFHBLaIBPZLkWan3rHjkuYaEHDWdNjWEiLVyZzS8trRoMkTrHkhpEuMDfx7bEs7iuGIWY2VbLjV+ghpAznB6SAhcqNEauktArYJdBOJ3GjMis1PnbLH/ei3c8GlYh5SEA8Nv/0fRdEzzyFbOr32wPvHvua7amzBph5B0v9TmkiOmJ+b3wSNV938U4FVHYK4kui6QUBR+d3fMCIFQemTf3RI4BgTNZGAKN8Ta4FXnkHeFPL0BoN0GdvmedTsBWcDXR6HdNDFhs2CQokbYK3bocbnimH78EC/8Uunr5F7x4Cuo8NkZ73DGeg==",
+  "sourceSha": "ec4076fc92268a289603b0af209b0557cf75c6c7",
+  "generatedAt": "2026-08-29T06:54:38.147Z"
 }
