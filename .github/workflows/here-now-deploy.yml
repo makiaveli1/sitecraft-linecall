@@ -40,8 +40,8 @@ jobs:
 
           const expected = new Map([
             ['index.html', 1366],
-            ['assets/index-CzvmbhIJ.css', 88503],
-            ['assets/index-BjQP2phe.js', 254464],
+            ['assets/index-Biwm6Odh.css', 107291],
+            ['assets/index-DGhrTz8S.js', 263058],
             ['linecall-authority-keyart.svg', 5587],
           ]);
 
@@ -74,15 +74,20 @@ jobs:
           }
           NODE
 
-      - name: Publish verified bundle to here.now
+      - name: Update claimed LINECALL site on here.now
         shell: bash
         env:
-          CLAIM_PUBLIC_KEY_B64: 'LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUFtWndZWm84WVZTSzdYMk9NcDBDNApPTER5WDI1cmRmU1F4elRBSkdkVUhoMW5zY0ROZjdDanEwSHhza04rVDNoVkNJZk0wTGR5WVJZU2ZWaFlLYmVjCnJjZ2ZKOENPeFlmL0Zlc0tXcjU2M1p2NUZ1dlVTaEt1djhuN0M5blNlRVVSS0hFdWk4VjNGWFYxNWpDVlZaLysKczlFZ0pqNitEVGQvdDVBYjg2K3MzbU1tMXlaZnZYWTBMTHhKc1YycVJadXdDOU9YRUgvU2tVTVFwUlJ0U2RhSApaOWptaG9HZitaNExGblYvak14R3lNY1VmOFhodHFvWlgwS09Ba2I1andUcUdEdi9uUXpwcG1ZR1A2SlZING9rClRsdmlEWFplL0xqYUtxMUdkdURRNVNGTjZ3aGxoUk1jK0ZXUnlHMkVHU3ltUHVzcExjZVhhdG9ETWJvRU8zbzAKN3dJREFRQUIKLS0tLS1FTkQgUFVCTElDIEtFWS0tLS0tCg=='
+          HERENOW_API_KEY: ${{ secrets.HERENOW_API_KEY }}
+          LINECALL_SITE_SLUG: grassy-lotus-7dr8
         run: |
           set -euo pipefail
-          trap 'rm -f /tmp/linecall-create.json /tmp/linecall-public.pem' EXIT
+          trap 'rm -f /tmp/linecall-update.json /tmp/linecall-publish.json' EXIT
 
-          printf '%s' "$CLAIM_PUBLIC_KEY_B64" | tr -d ' ' | base64 -d > /tmp/linecall-public.pem
+          if [[ -z "${HERENOW_API_KEY:-}" ]]; then
+            echo 'Missing HERENOW_API_KEY GitHub secret. Refusing to create a replacement anonymous site.' >&2
+            echo 'Add the API key from the here.now dashboard as the repository secret HERENOW_API_KEY, then rerun this workflow.' >&2
+            exit 2
+          fi
 
           cat > /tmp/linecall-publish.json <<'JSON'
           {
@@ -91,37 +96,38 @@ jobs:
             "spaMode": true,
             "files": [
               {"path":"index.html","size":1366,"contentType":"text/html; charset=utf-8"},
-              {"path":"assets/index-CzvmbhIJ.css","size":88503,"contentType":"text/css; charset=utf-8"},
-              {"path":"assets/index-BjQP2phe.js","size":254464,"contentType":"text/javascript; charset=utf-8"},
+              {"path":"assets/index-Biwm6Odh.css","size":107291,"contentType":"text/css; charset=utf-8"},
+              {"path":"assets/index-DGhrTz8S.js","size":263058,"contentType":"text/javascript; charset=utf-8"},
               {"path":"linecall-authority-keyart.svg","size":5587,"contentType":"image/svg+xml"}
             ]
           }
           JSON
 
-          create_json="$(curl -fsS https://here.now/api/v1/publish \
+          update_json="$(curl -fsS -X PUT "https://here.now/api/v1/publish/${LINECALL_SITE_SLUG}" \
+            -H "Authorization: Bearer ${HERENOW_API_KEY}" \
             -H 'X-HereNow-Client: github-actions/linecall' \
             -H 'content-type: application/json' \
             --data-binary @/tmp/linecall-publish.json)"
-          printf '%s' "$create_json" > /tmp/linecall-create.json
+          printf '%s' "$update_json" > /tmp/linecall-update.json
 
-          site_url="$(node -e "const r=require('/tmp/linecall-create.json'); if(!r.siteUrl) process.exit(2); process.stdout.write(r.siteUrl)")"
-          claim_url="$(node -e "const r=require('/tmp/linecall-create.json'); if(!r.claimUrl) process.exit(2); process.stdout.write(r.claimUrl)")"
-          version_id="$(node -e "const r=require('/tmp/linecall-create.json'); if(!r.upload?.versionId) process.exit(2); process.stdout.write(r.upload.versionId)")"
-          finalize_url="$(node -e "const r=require('/tmp/linecall-create.json'); if(!r.upload?.finalizeUrl) process.exit(2); process.stdout.write(r.upload.finalizeUrl)")"
+          site_url="$(node -e "const r=require('/tmp/linecall-update.json'); if(!r.siteUrl) process.exit(2); process.stdout.write(r.siteUrl)")"
+          version_id="$(node -e "const r=require('/tmp/linecall-update.json'); if(!r.upload?.versionId) process.exit(2); process.stdout.write(r.upload.versionId)")"
+          finalize_url="$(node -e "const r=require('/tmp/linecall-update.json'); if(!r.upload?.finalizeUrl) process.exit(2); process.stdout.write(r.upload.finalizeUrl)")"
 
           while IFS='|' read -r rel content_type; do
-            upload_url="$(node -e "const r=require('/tmp/linecall-create.json'); const p=process.argv[1]; const u=r.upload?.uploads?.find(x=>x.path===p); if(!u?.url) process.exit(2); process.stdout.write(u.url)" "$rel")"
+            upload_url="$(node -e "const r=require('/tmp/linecall-update.json'); const p=process.argv[1]; const u=r.upload?.uploads?.find(x=>x.path===p); if(!u?.url) process.exit(2); process.stdout.write(u.url)" "$rel")"
             curl -fsS -X PUT "$upload_url" \
               -H "Content-Type: $content_type" \
               --data-binary "@dist/$rel" >/dev/null
           done <<'FILES'
           index.html|text/html; charset=utf-8
-          assets/index-CzvmbhIJ.css|text/css; charset=utf-8
-          assets/index-BjQP2phe.js|text/javascript; charset=utf-8
+          assets/index-Biwm6Odh.css|text/css; charset=utf-8
+          assets/index-DGhrTz8S.js|text/javascript; charset=utf-8
           linecall-authority-keyart.svg|image/svg+xml
           FILES
 
           finalize_json="$(curl -fsS -X POST "$finalize_url" \
+            -H "Authorization: Bearer ${HERENOW_API_KEY}" \
             -H 'content-type: application/json' \
             --data-binary "{\"versionId\":\"$version_id\"}")"
 
@@ -131,46 +137,47 @@ jobs:
             echo "here.now finalize did not report live state" >&2
             exit 1
           fi
+          if [[ "$persistence" != "permanent" ]]; then
+            echo "here.now did not confirm permanent ownership after claimed-site update: $persistence" >&2
+            exit 1
+          fi
 
-          claim_ciphertext="$(printf '%s' "$claim_url" | \
-            openssl pkeyutl -encrypt -pubin -inkey /tmp/linecall-public.pem \
-              -pkeyopt rsa_padding_mode:oaep \
-              -pkeyopt rsa_oaep_md:sha256 \
-              -pkeyopt rsa_mgf1_md:sha256 | base64 -w 0)"
+          expected_site="https://${LINECALL_SITE_SLUG}.here.now/"
+          if [[ "$site_url" != "$expected_site" ]]; then
+            echo "here.now returned unexpected site URL: $site_url" >&2
+            exit 1
+          fi
 
           echo "LINECALL_SITE_URL=$site_url"
           echo "LINECALL_FINALIZE_STATE=$state"
           echo "LINECALL_FINALIZE_PERSISTENCE=$persistence"
-          echo "LINECALL_CLAIM_CIPHERTEXT=$claim_ciphertext"
 
           {
             echo '### LINECALL here.now deployment receipt'
             echo "- Site: $site_url"
+            echo "- Deployment mode: owned-site update"
             echo "- Finalize state: $state"
-            echo "- Persistence before claim: $persistence"
-            echo '- Claim URL: encrypted with the one-time public key embedded in this workflow'
-            echo
-            echo '```text'
-            echo "$claim_ciphertext"
-            echo '```'
+            echo "- Persistence: $persistence"
+            echo "- Source SHA: $GITHUB_SHA"
           } >> "$GITHUB_STEP_SUMMARY"
 
           mkdir -p /tmp/linecall-receipt
-          node - "$site_url" "$state" "$persistence" "$claim_ciphertext" "$GITHUB_SHA" <<'NODE'
+          node - "$site_url" "$state" "$persistence" "$LINECALL_SITE_SLUG" "$GITHUB_SHA" <<'NODE'
           const fs = require('fs');
-          const [siteUrl, finalizeState, persistenceBeforeClaim, claimCiphertext, sourceSha] = process.argv.slice(2);
+          const [siteUrl, finalizeState, persistence, siteSlug, sourceSha] = process.argv.slice(2);
           fs.writeFileSync('/tmp/linecall-receipt/here-now-receipt.json', JSON.stringify({
-            schemaVersion: 1,
+            schemaVersion: 2,
+            deploymentMode: 'owned-update',
+            siteSlug,
             siteUrl,
             finalizeState,
-            persistenceBeforeClaim,
-            claimCiphertext,
+            persistence,
             sourceSha,
             generatedAt: new Date().toISOString(),
           }, null, 2) + '\n');
           NODE
 
-      - name: Upload encrypted deployment receipt
+      - name: Upload deployment receipt
         uses: actions/upload-artifact@v4
         with:
           name: linecall-here-now-receipt
@@ -189,7 +196,7 @@ jobs:
         with:
           ref: main
 
-      - name: Download encrypted deployment receipt
+      - name: Download deployment receipt
         uses: actions/download-artifact@v5
         with:
           name: linecall-here-now-receipt

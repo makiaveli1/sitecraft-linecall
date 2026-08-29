@@ -276,6 +276,14 @@ async function snapshot(cdp) {
     const liveDemo = document.querySelector('#live-demo');
     const safetySection = document.querySelector('.authority-grid--page');
     const proofSection = document.querySelector('.proof-page');
+    const productInstrument = document.querySelector('.product-lab__instrument');
+    const productTrace = document.querySelector('.product-lab__trace');
+    const demoMasthead = document.querySelector('.demo-masthead--control-room');
+    const demoBriefing = document.querySelector('.demo-scenario--briefing');
+    const demoBackdropImage = demoMasthead ? getComputedStyle(demoMasthead, '::before').backgroundImage : '';
+    const trustCycle = document.querySelector('.trust-vault__cycle');
+    const trustSeal = document.querySelector('.authority-grid__seal');
+    const proofLedger = document.querySelector('.proof-ledger');
     const segmentTrack = document.querySelector('.segment-track');
     const segmentLine = segmentTrack?.querySelector('.segment-track__line');
     const currentSegment = segmentTrack?.querySelector('li[data-state="current"]');
@@ -341,6 +349,15 @@ async function snapshot(cdp) {
       siteH1Count: document.querySelectorAll('h1').length,
       siteStructureComplete: [meaningSection, howSection].every(Boolean),
       trustStructureComplete: [safetySection, proofSection].every(Boolean),
+      productIdentityComplete: [productInstrument, productTrace].every(Boolean),
+      productInstrumentInsideX: fullyInsideX(productInstrument),
+      productInstrumentVisible: visible(productInstrument?.getBoundingClientRect() ?? null),
+      demoIdentityComplete: [demoMasthead, demoBriefing].every(Boolean),
+      demoBriefingInsideX: fullyInsideX(demoBriefing),
+      demoBackdropImage,
+      trustIdentityComplete: [trustCycle, trustSeal, proofLedger].every(Boolean),
+      trustCycleInsideX: fullyInsideX(trustCycle),
+      proofLedgerInsideX: fullyInsideX(proofLedger),
       liveDemoInsideX: fullyInsideX(liveDemo),
       productLeadVisible: visible(productLead?.getBoundingClientRect() ?? null),
       showPulseVisible: visible(showPulse?.getBoundingClientRect() ?? null),
@@ -506,6 +523,11 @@ test('production build renders and behaves across real Chromium viewport states'
         'A second caller for the timing problem, not the show.',
         `${viewport.label}: product-route heading drifted`,
       );
+      assert.equal(productState.productIdentityComplete, true, `${viewport.label}: product timing-laboratory identity is incomplete`);
+      assert.equal(productState.productInstrumentInsideX, true, `${viewport.label}: product timing instrument escaped the viewport`);
+      if (viewport.width >= 1000) {
+        assert.equal(productState.productInstrumentVisible, true, `${viewport.label}: product timing instrument should support the opening story`);
+      }
 
       await navigate(cdp, trustUrl);
       const trustState = await snapshot(cdp);
@@ -518,13 +540,19 @@ test('production build renders and behaves across real Chromium viewport states'
         'Useful because the agent cannot quietly become the operator.',
         `${viewport.label}: trust-route heading drifted`,
       );
+      assert.equal(trustState.trustIdentityComplete, true, `${viewport.label}: trust evidence-vault identity is incomplete`);
+      assert.equal(trustState.trustCycleInsideX, true, `${viewport.label}: trust 4→5→4 lifecycle escaped the viewport`);
+      assert.equal(trustState.proofLedgerInsideX, true, `${viewport.label}: trust proof ledger escaped the viewport`);
 
       await navigate(cdp, demoUrl);
       const demoInitial = await snapshot(cdp);
-      assert.equal(demoInitial.horizontalOverflow, false, `${viewport.label}: dedicated live desk overflowed horizontally`);
+      assert.equal(demoInitial.horizontalOverflow, false, `${viewport.label}: dedicated live desk overflowed horizontally: ${JSON.stringify(demoInitial.overflowingElements)}`);
       assert.equal(demoInitial.siteNavInsideX, true, `${viewport.label}: live-desk navigation escaped the viewport`);
       assert.equal(demoInitial.liveDemoInsideX, true, `${viewport.label}: live desk section escaped the viewport`);
       assert.equal(demoInitial.siteH1Count, 1, `${viewport.label}: live desk route must expose one primary heading`);
+      assert.equal(demoInitial.demoIdentityComplete, true, `${viewport.label}: live-desk control-room identity is incomplete`);
+      assert.equal(demoInitial.demoBriefingInsideX, true, `${viewport.label}: live-desk mission brief escaped the viewport`);
+      assert.match(demoInitial.demoBackdropImage, /images\.unsplash\.com.*photo-1786155458201-9554cdde897e/i, `${viewport.label}: live-desk control-room photography is missing`);
       assert.equal(demoInitial.cueRowsInsideX, true, `${viewport.label}: cue row escaped the viewport`);
       assert.equal(demoInitial.searchInsideX, true, `${viewport.label}: search input escaped the viewport`);
       assert.equal(demoInitial.agentPanelInsideX, true, `${viewport.label}: WebMCP collaboration surface escaped the viewport`);
