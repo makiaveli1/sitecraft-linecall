@@ -268,7 +268,8 @@ async function snapshot(cdp) {
     const siteHero = document.querySelector('.wow-hero');
     const siteHeroTitle = siteHero?.querySelector('h1');
     const siteHeroLede = siteHero?.querySelector('.wow-hero__lede');
-    const heroConsole = document.querySelector('.stage-visual');
+    const heroConsole = document.querySelector('.hero-live-card');
+    const heroBackdropImage = siteHero ? getComputedStyle(siteHero, '::before').backgroundImage : '';
     const heroCta = document.querySelector('.wow-hero__actions .site-button');
     const meaningSection = document.querySelector('.home-manifesto');
     const howSection = document.querySelector('.route-gallery');
@@ -334,6 +335,8 @@ async function snapshot(cdp) {
       siteHeroLede: siteHeroLede?.textContent.replace(/\\s+/g, ' ').trim() ?? '',
       heroConsoleInsideX: fullyInsideX(heroConsole),
       heroConsoleVisible: visible(heroConsole?.getBoundingClientRect() ?? null),
+      heroBackdropImage,
+      manifestoHeight: meaningSection?.getBoundingClientRect().height ?? 0,
       heroCtaHref: heroCta?.getAttribute('href') ?? null,
       siteH1Count: document.querySelectorAll('h1').length,
       siteStructureComplete: [meaningSection, howSection].every(Boolean),
@@ -477,7 +480,8 @@ test('production build renders and behaves across real Chromium viewport states'
       assert.equal(state.horizontalOverflow, false, `${viewport.label}: homepage overflowed horizontally: ${JSON.stringify(state.overflowingElements)}`);
       assert.equal(state.siteNavInsideX, true, `${viewport.label}: primary navigation escaped the homepage viewport`);
       assert.equal(state.siteHeroInsideX, true, `${viewport.label}: homepage hero escaped the viewport`);
-      assert.equal(state.heroConsoleInsideX, true, `${viewport.label}: cinematic key art escaped the viewport`);
+      assert.equal(state.heroConsoleInsideX, true, `${viewport.label}: floating live-run control surface escaped the viewport`);
+      assert.match(state.heroBackdropImage, /images\.unsplash\.com.*photo-1761618291331-535983ae4296/i, `${viewport.label}: cinematic stage photography is missing from the hero backdrop`);
       assert.equal(state.siteHeroVisible, true, `${viewport.label}: homepage product promise is missing from the first viewport`);
       assert.equal(state.siteH1Count, 1, `${viewport.label}: homepage must expose one primary heading`);
       assert.equal(state.siteHeroTitle, 'When the show moves, LINECALL finds the time.', `${viewport.label}: homepage product promise drifted`);
@@ -485,8 +489,9 @@ test('production build renders and behaves across real Chromium viewport states'
       assert.equal(state.heroCtaHref, '/demo', `${viewport.label}: homepage CTA no longer routes to the dedicated live desk`);
       assert.equal(state.siteStructureComplete, true, `${viewport.label}: homepage manifesto or route gallery is missing`);
       assert.equal(state.scroll.y, 0, `${viewport.label}: homepage did not load at the top`);
-      if (viewport.width >= 900) {
-        assert.equal(state.heroConsoleVisible, true, `${viewport.label}: cinematic operational key art should support the homepage story`);
+      if (viewport.width >= 1000) {
+        assert.equal(state.heroConsoleVisible, true, `${viewport.label}: live operational surface should support the photographic hero story`);
+        assert.ok(state.manifestoHeight <= 640, `${viewport.label}: pressure section grew back into an oversized empty canvas (${state.manifestoHeight}px)`);
       }
       const shot = await screenshot(cdp, `${viewport.label}-home.png`);
       captures.push({ ...shot, label: `${viewport.label} · multi-page home` });
