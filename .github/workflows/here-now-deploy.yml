@@ -39,9 +39,9 @@ jobs:
           const crypto = require('crypto');
 
           const expected = new Map([
-            ['index.html', 1306],
-            ['assets/index-4zdoi2-x.css', 41788],
-            ['assets/index-mpSYpyT0.js', 233000],
+            ['index.html', 1316],
+            ['assets/index-BhS57_nS.css', 61892],
+            ['assets/index-DqvJBf31.js', 248909],
           ]);
 
           const found = [];
@@ -86,12 +86,12 @@ jobs:
           cat > /tmp/linecall-publish.json <<'JSON'
           {
             "displayName": "LINECALL",
-            "displayDescription": "A WebMCP-powered live production cue desk where agents reason, deterministic rules verify, and human operators keep final authority.",
+            "displayDescription": "LINECALL helps live-event teams keep a show on time while an AI agent explores safe timing fixes and the human operator keeps final authority.",
             "spaMode": true,
             "files": [
-              {"path":"index.html","size":1306,"contentType":"text/html; charset=utf-8"},
-              {"path":"assets/index-4zdoi2-x.css","size":41788,"contentType":"text/css; charset=utf-8"},
-              {"path":"assets/index-mpSYpyT0.js","size":233000,"contentType":"text/javascript; charset=utf-8"}
+              {"path":"index.html","size":1316,"contentType":"text/html; charset=utf-8"},
+              {"path":"assets/index-BhS57_nS.css","size":61892,"contentType":"text/css; charset=utf-8"},
+              {"path":"assets/index-DqvJBf31.js","size":248909,"contentType":"text/javascript; charset=utf-8"}
             ]
           }
           JSON
@@ -114,8 +114,8 @@ jobs:
               --data-binary "@dist/$rel" >/dev/null
           done <<'FILES'
           index.html|text/html; charset=utf-8
-          assets/index-4zdoi2-x.css|text/css; charset=utf-8
-          assets/index-mpSYpyT0.js|text/javascript; charset=utf-8
+          assets/index-BhS57_nS.css|text/css; charset=utf-8
+          assets/index-DqvJBf31.js|text/javascript; charset=utf-8
           FILES
 
           finalize_json="$(curl -fsS -X POST "$finalize_url" \

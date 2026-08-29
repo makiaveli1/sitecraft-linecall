@@ -260,6 +260,17 @@ async function snapshot(cdp) {
     const agentPanel = document.querySelector('.agent-panel');
     const productLead = document.querySelector('.command-header');
     const showPulse = document.querySelector('.show-pulse');
+    const siteNav = document.querySelector('.site-nav');
+    const siteHero = document.querySelector('.site-hero');
+    const siteHeroTitle = siteHero?.querySelector('h1');
+    const siteHeroLede = siteHero?.querySelector('.site-hero__lede');
+    const heroConsole = document.querySelector('.hero-console');
+    const heroCta = document.querySelector('.site-hero__actions .site-button');
+    const meaningSection = document.querySelector('.site-section--meaning');
+    const howSection = document.querySelector('#how-it-works');
+    const liveDemo = document.querySelector('#live-demo');
+    const safetySection = document.querySelector('#safety');
+    const proofSection = document.querySelector('#proof');
     const segmentTrack = document.querySelector('.segment-track');
     const segmentLine = segmentTrack?.querySelector('.segment-track__line');
     const currentSegment = segmentTrack?.querySelector('li[data-state="current"]');
@@ -300,6 +311,17 @@ async function snapshot(cdp) {
       cueRowsInsideX: [...document.querySelectorAll('.cue-row')].every((row) => fullyInsideX(row)),
       searchInsideX: fullyInsideX(search),
       agentPanelInsideX: fullyInsideX(agentPanel),
+      siteNavInsideX: fullyInsideX(siteNav),
+      siteHeroInsideX: fullyInsideX(siteHero),
+      siteHeroVisible: visible(siteHero?.getBoundingClientRect() ?? null),
+      siteHeroTitle: siteHeroTitle?.textContent.replace(/\\s+/g, ' ').trim() ?? '',
+      siteHeroLede: siteHeroLede?.textContent.replace(/\\s+/g, ' ').trim() ?? '',
+      heroConsoleInsideX: fullyInsideX(heroConsole),
+      heroConsoleVisible: visible(heroConsole?.getBoundingClientRect() ?? null),
+      heroCtaHref: heroCta?.getAttribute('href') ?? null,
+      siteH1Count: document.querySelectorAll('h1').length,
+      siteStructureComplete: [meaningSection, howSection, liveDemo, safetySection, proofSection].every(Boolean),
+      liveDemoInsideX: fullyInsideX(liveDemo),
       productLeadVisible: visible(productLead?.getBoundingClientRect() ?? null),
       showPulseVisible: visible(showPulse?.getBoundingClientRect() ?? null),
       segmentTrackInsideX: fullyInsideX(segmentTrack),
@@ -432,34 +454,54 @@ test('production build renders and behaves across real Chromium viewport states'
       await navigate(cdp, url);
       const state = await snapshot(cdp);
       assert.equal(state.horizontalOverflow, false, `${viewport.label}: horizontal page overflow`);
+      assert.equal(state.siteNavInsideX, true, `${viewport.label}: primary navigation escaped the viewport`);
+      assert.equal(state.siteHeroInsideX, true, `${viewport.label}: product hero escaped the viewport`);
+      assert.equal(state.heroConsoleInsideX, true, `${viewport.label}: operational hero preview escaped the viewport`);
+      assert.equal(state.liveDemoInsideX, true, `${viewport.label}: live demo section escaped the viewport`);
+      assert.equal(state.siteHeroVisible, true, `${viewport.label}: product explanation is missing from the first viewport`);
+      assert.equal(state.siteH1Count, 1, `${viewport.label}: the site must expose one primary product heading`);
+      assert.equal(state.siteHeroTitle, 'Run the show. Let the agent solve the timing.', `${viewport.label}: first-view product promise drifted`);
+      assert.match(state.siteHeroLede, /keep the show on time.*AI agent.*You decide whether anything moves/i, `${viewport.label}: first-view explanation no longer says what LINECALL does, what the agent does, and who controls the result`);
+      assert.equal(state.heroCtaHref, '#live-demo', `${viewport.label}: first-view CTA no longer leads to the working product`);
+      assert.equal(state.siteStructureComplete, true, `${viewport.label}: one or more core website sections are missing`);
+      if (viewport.width >= 900) {
+        assert.equal(state.heroConsoleVisible, true, `${viewport.label}: operational preview should support the first-view explanation`);
+      }
       assert.equal(state.cueRowsInsideX, true, `${viewport.label}: cue row escaped the viewport`);
       assert.equal(state.searchInsideX, true, `${viewport.label}: search input escaped the viewport`);
       assert.equal(state.agentPanelInsideX, true, `${viewport.label}: WebMCP collaboration surface escaped the viewport`);
       assert.equal(state.decisionStepCount, 4, `${viewport.label}: authority rail must expose all four collaboration steps`);
       assert.match(state.decisionText, /Agent compares.*Rules verify.*Human approves.*Agent applies/s, `${viewport.label}: authority rail lost its collaboration sequence`);
-      assert.equal(state.agentBriefVisible, true, `${viewport.label}: operator briefing must be visible before agent action`);
+      assert.equal(state.agentBriefVisible, true, `${viewport.label}: operator briefing must remain available before agent action`);
       assert.match(state.agentBriefText, /Audience Q&A needs to start two seconds later/i, `${viewport.label}: judge-facing demo prompt is missing`);
       assert.equal(state.selectedCue, 'Q012', `${viewport.label}: initial selected cue drifted`);
       assert.equal(state.currentCue, 'Q012', `${viewport.label}: declared current cue drifted`);
-      assert.equal(state.scroll.y, 0, `${viewport.label}: first load must preserve the judge-facing top of the cue desk`);
-      assert.equal(state.productLeadVisible, true, `${viewport.label}: product lead is missing from the first viewport`);
-      assert.equal(state.showPulseVisible, true, `${viewport.label}: live Now/Next pulse is missing from the first viewport`);
-      assert.equal(state.segmentTrackInsideX, true, `${viewport.label}: show progression rail escaped the viewport`);
-      assert.equal(state.currentSegmentAria, 'step', `${viewport.label}: current show segment lost its semantic current-step marker`);
-      assert.equal(state.currentSegmentLabel, 'Opening sequence', `${viewport.label}: current show segment label drifted`);
-      assert.ok(state.currentSegmentMarkerWidth >= 10, `${viewport.label}: current show-segment marker is too weak to read at a glance`);
-      assert.equal(state.segmentRailClearsLabel, true, `${viewport.label}: progression rail collides with its segment label`);
-      if (viewport.width >= 900) {
-        assert.equal(state.agentPanelVisible, true, `${viewport.label}: WebMCP collaboration story should begin in the first viewport`);
-      }
+      assert.equal(state.scroll.y, 0, `${viewport.label}: first load must preserve the top of the product site`);
       if (viewport.width > 980) {
-        assert.notEqual(state.inspectorDisplay, 'none', 'Wide view must keep the selected-cue inspector visible.');
+        assert.notEqual(state.inspectorDisplay, 'none', 'Wide view must keep the selected-cue inspector available in the live desk.');
       } else {
         assert.equal(state.inspectorDisplay, 'none', `${viewport.label}: inspector should not cover the score before selection.`);
       }
       const shot = await screenshot(cdp, `${viewport.label}-initial.png`);
-      captures.push({ ...shot, label: `${viewport.label} · initial` });
-      report.cases[viewport.label] = { initial: state, screenshot: shot };
+      captures.push({ ...shot, label: `${viewport.label} · site first view` });
+
+      await evaluate(cdp, `document.querySelector('.command-header').scrollIntoView({ block: 'start' }); true`);
+      await sleep(120);
+      const headerState = await snapshot(cdp);
+      assert.equal(headerState.productLeadVisible, true, `${viewport.label}: live desk header cannot be reached from the product site`);
+
+      await evaluate(cdp, `document.querySelector('.show-pulse').scrollIntoView({ block: 'start' }); true`);
+      await sleep(120);
+      const demoState = await snapshot(cdp);
+      assert.equal(demoState.showPulseVisible, true, `${viewport.label}: live Now/Next pulse is not visible inside the live desk`);
+      assert.equal(demoState.segmentTrackInsideX, true, `${viewport.label}: show progression rail escaped the live desk viewport`);
+      assert.equal(demoState.currentSegmentAria, 'step', `${viewport.label}: current show segment lost its semantic current-step marker`);
+      assert.equal(demoState.currentSegmentLabel, 'Opening sequence', `${viewport.label}: current show segment label drifted`);
+      assert.ok(demoState.currentSegmentMarkerWidth >= 10, `${viewport.label}: current show-segment marker is too weak to read at a glance`);
+      assert.equal(demoState.segmentRailClearsLabel, true, `${viewport.label}: progression rail collides with its segment label`);
+      const demoShot = await screenshot(cdp, `${viewport.label}-live-desk.png`);
+      captures.push({ ...demoShot, label: `${viewport.label} · live desk` });
+      report.cases[viewport.label] = { initial: state, screenshot: shot, live_desk: demoState, live_desk_screenshot: demoShot };
     }
 
     // Wide keyboard navigation, readiness, filters/search and hold preservation.
@@ -662,7 +704,7 @@ test('production build renders and behaves across real Chromium viewport states'
     await evaluate(cdp, `document.querySelector('.skip-link').focus(); true`);
     await pressKey(cdp, 'Enter', 'Enter');
     const skipState = await snapshot(cdp);
-    assert.equal(skipState.activeElement.id, 'linecall-main', 'Skip link did not move focus to the cue-desk main region.');
+    assert.equal(skipState.activeElement.id, 'site-main', 'Skip link did not move focus to the main product-site region.');
     report.interactions.skip_link = skipState.activeElement;
 
     // Narrow pointer selection opens a real secondary detail view and return restores list + focus.
