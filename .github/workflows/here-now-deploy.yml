@@ -5,6 +5,12 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/here-now-deploy.yml'
+      - 'src/**'
+      - 'public/**'
+      - 'index.html'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.js'
   workflow_dispatch:
 
 permissions:
