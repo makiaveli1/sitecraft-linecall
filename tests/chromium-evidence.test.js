@@ -260,6 +260,13 @@ async function snapshot(cdp) {
     const agentPanel = document.querySelector('.agent-panel');
     const productLead = document.querySelector('.command-header');
     const showPulse = document.querySelector('.show-pulse');
+    const segmentTrack = document.querySelector('.segment-track');
+    const segmentLine = segmentTrack?.querySelector('.segment-track__line');
+    const currentSegment = segmentTrack?.querySelector('li[data-state="current"]');
+    const currentSegmentMarker = currentSegment?.querySelector(':scope > span');
+    const currentSegmentLabel = currentSegment?.querySelector('strong');
+    const segmentLineRect = segmentLine?.getBoundingClientRect() ?? null;
+    const currentSegmentLabelRect = currentSegmentLabel?.getBoundingClientRect() ?? null;
     const decisionRail = document.querySelector('.decision-rail');
     const agentBrief = document.querySelector('.agent-brief');
     const active = document.activeElement;
@@ -295,6 +302,11 @@ async function snapshot(cdp) {
       agentPanelInsideX: fullyInsideX(agentPanel),
       productLeadVisible: visible(productLead?.getBoundingClientRect() ?? null),
       showPulseVisible: visible(showPulse?.getBoundingClientRect() ?? null),
+      segmentTrackInsideX: fullyInsideX(segmentTrack),
+      currentSegmentAria: currentSegment?.getAttribute('aria-current') ?? null,
+      currentSegmentLabel: currentSegmentLabel?.textContent.trim() ?? null,
+      currentSegmentMarkerWidth: currentSegmentMarker?.getBoundingClientRect().width ?? 0,
+      segmentRailClearsLabel: !!segmentLineRect && !!currentSegmentLabelRect && segmentLineRect.bottom < currentSegmentLabelRect.top,
       agentPanelVisible: visible(agentPanel?.getBoundingClientRect() ?? null),
       decisionStepCount: decisionRail?.querySelectorAll('li').length ?? 0,
       decisionText: decisionRail?.textContent.replace(/\\s+/g, ' ').trim() ?? '',
@@ -432,6 +444,11 @@ test('production build renders and behaves across real Chromium viewport states'
       assert.equal(state.scroll.y, 0, `${viewport.label}: first load must preserve the judge-facing top of the cue desk`);
       assert.equal(state.productLeadVisible, true, `${viewport.label}: product lead is missing from the first viewport`);
       assert.equal(state.showPulseVisible, true, `${viewport.label}: live Now/Next pulse is missing from the first viewport`);
+      assert.equal(state.segmentTrackInsideX, true, `${viewport.label}: show progression rail escaped the viewport`);
+      assert.equal(state.currentSegmentAria, 'step', `${viewport.label}: current show segment lost its semantic current-step marker`);
+      assert.equal(state.currentSegmentLabel, 'Opening sequence', `${viewport.label}: current show segment label drifted`);
+      assert.ok(state.currentSegmentMarkerWidth >= 10, `${viewport.label}: current show-segment marker is too weak to read at a glance`);
+      assert.equal(state.segmentRailClearsLabel, true, `${viewport.label}: progression rail collides with its segment label`);
       if (viewport.width >= 900) {
         assert.equal(state.agentPanelVisible, true, `${viewport.label}: WebMCP collaboration story should begin in the first viewport`);
       }

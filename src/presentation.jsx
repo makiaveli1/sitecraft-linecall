@@ -109,7 +109,11 @@ export function ShowPulse({ schedule, sequence, revision, hold }) {
           {SEGMENTS.map((segment) => {
             const state = segmentState(segment, currentCueNumber);
             return (
-              <li key={segment.id} data-state={state}>
+              <li
+                key={segment.id}
+                data-state={state}
+                aria-current={state === 'current' ? 'step' : undefined}
+              >
                 <span aria-hidden="true" />
                 <strong>{segment.label}</strong>
                 <small>Q{String(segment.startCue).padStart(3, '0')}–Q{String(segment.endCue).padStart(3, '0')}</small>
