@@ -28,9 +28,9 @@ The normal website works as a human-operated run-of-show interface in an ordinar
 
 ## Watch the complete demo
 
-[![Watch the 2 minute 32 second LINECALL WebMCP Challenge demo](./docs/media/linecall-03-strategy-preview.png)](./docs/media/linecall-webmcp-challenge-demo.mp4)
+[![Watch the 2 minute 32 second LINECALL WebMCP Challenge demo](./docs/media/linecall-03-strategy-preview.png)](./docs/media/linecall-webmcp-challenge-demo.mp4?raw=1)
 
-**[▶ Watch or download the 2:32 MP4 demo](./docs/media/linecall-webmcp-challenge-demo.mp4)** — 1920×1080, H.264 video with narrated audio.
+**[▶ Watch or download the 2:32 MP4 demo](./docs/media/linecall-webmcp-challenge-demo.mp4?raw=1)** — 1920×1080, H.264 video with narrated audio.
 
 The recording shows the complete R1 → R2 workflow: browser tool discovery, safe-versus-blocked comparison, exact preview, human approval, one-time execution, visible receipt, and a separate human-lock refusal.
 
