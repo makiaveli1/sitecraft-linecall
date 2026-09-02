@@ -2,7 +2,7 @@
 
 > **A live production control surface where agents can reason about the run, deterministic rules decide what is safe, and people keep final authority.**
 
-This is a working submission brief for the OpenAI WebMCP Challenge. Replace the live-site and video placeholders only after those artifacts are verified.
+This is the working submission brief for the OpenAI WebMCP Challenge. The permanent live site is verified; replace the video placeholder only after the public YouTube demo is verified.
 
 ## Short description
 
@@ -116,7 +116,7 @@ Summarize the model: **agent explores, deterministic rules verify, human approve
 - Dense cue-score workflow preserved for human operators.
 - Responsive collaboration UI across desktop and narrow mobile widths.
 - Production build passes.
-- **29/29 tests pass**, including a real Chromium production-build interaction rehearsal of preview → human approval → apply → capability withdrawal.
+- **30/30 tests pass**, including a real Chromium production-build interaction rehearsal of preview → human approval → apply → capability withdrawal.
 
 ### Potential Impact
 
@@ -135,18 +135,19 @@ Summarize the model: **agent explores, deterministic rules verify, human approve
 
 Current verified public release evidence:
 
+- Permanent live site: [grassy-lotus-7dr8.here.now](https://grassy-lotus-7dr8.here.now/)
 - Public repository: `makiaveli1/sitecraft-linecall`
 - Default release branch: `main`
 - Challenge provenance branch: `webmcp-challenge`
 - Pre-challenge baseline: `c84cb79ebce4975826b37aa4d63044555674d1f3`
-- Verified default-branch release commit: `e3bcf7dc392f8769743b7db00fec59a70d0b6385`
-- Latest judge-brief source commit on the challenge branch: `ab482d9b5f15cf4d27737a18512e282b3615b2fe`
+- Deployed source commit: `5b94e29bc229f56f9abcf1376d7d9c515db2a993`
+- Current public `main` deployment receipt commit: `c1e59b02db1bc890bbf36e62469c80b545fdf1b6`
 - Production build: passed
-- Tests: **29 passed / 0 failed / 0 skipped**
+- Tests: **30 passed / 0 failed / 0 skipped**
 - Real Chromium production interaction test: passed
-- Exact-state Bridge verification: passed on the merged `main` tree and again on commit `e3bcf7d`, with no project fingerprint drift
+- Exact-state Bridge verification: passed on `c1e59b0` with no project fingerprint drift
 
-The automated Chromium WebMCP rehearsal uses a controlled `document.modelContext` contract shim. It proves the production app's registration, capability lifecycle, UI, and handlers in real Chromium, but it is **not** claimed as native experimental-WebMCP proof. Native proof remains a separate pre-submission gate.
+The automated Chromium WebMCP rehearsal uses a controlled `document.modelContext` contract shim and proves the production app's registration, UI, handlers, and full 4 → 5 → 4 capability lifecycle in real Chromium. Separately, across attended checks on 2026-08-31 and 2026-09-01, ChatGPT's WebMCP-capable in-app browser discovered the normal-session tools on the permanent origin, successfully executed snapshot, strategy comparison, the exact 13-cue preview, and the locked-opening refusal. On 2026-09-01, the permanent origin also completed the direct native 4 → 5 → 4 lifecycle: four tools at R1; exact human approval; five tools including `linecall_apply_approved_retime`; one apply of `retime-r1-qa-p2-ripple_after`; then R2, a visible 13-cue receipt, Q020 at `00:24`, Q032 at `00:47`, no active approval or conflicts, and four tools again. On 2026-09-02, a compatible-agent replay then ran all seven declared prompts from `evals/webmcp-agent-cases.json` against the same permanent `/demo`. All seven exact call traces and arguments matched, including the safe compare → ripple preview → human stop sequence, the one-time approved-plan apply, the locked-opening refusal, the absent unlock capability, cue-readiness mutation, and no LINECALL call for the unrelated weather prompt. The replay ended at R2 with the visible 13-cue receipt, Q020 at `00:24`, Q024 ready at `00:34`, Q032 at `00:47`, no active approval or conflicts, four tools, and no apply capability.
 
 ## Native WebMCP proof procedure
 
@@ -161,26 +162,26 @@ Run this only against the final HTTPS deployment in ChatGPT's WebMCP-capable in-
 7. Run the locked-opening prompt and confirm Q014 blocks the retime with no unlock capability available.
 8. Run the unrelated weather prompt and confirm no LINECALL tool is selected.
 
-Record tool names, observed call order, visible UI state, and any divergence from the expected sequence. Do not convert this checklist to a passing claim until the final deployed origin has actually completed the run.
+Record tool names, observed call order, visible UI state, and any divergence from the expected sequence. The direct native lifecycle completed on the final deployed origin on 2026-09-01, and the seven declared compatible-agent prompt cases completed there on 2026-09-02 with exact expected call traces. Repeat the judge path for the public recording; the public video remains a separate unfinished submission asset.
 
 ## Submission fields to finalize
 
-- **Live URL:** `[ADD ONLY AFTER VERIFIED DEPLOYMENT]`
+- **Live URL:** [https://grassy-lotus-7dr8.here.now/](https://grassy-lotus-7dr8.here.now/)
 - **Public repository:** `makiaveli1/sitecraft-linecall` on default branch `main`
 - **Demo video:** `[ADD PUBLIC YOUTUBE URL — MUST BE UNDER 3 MINUTES]`
-- **Testing instructions:** use the primary prompt above, then the trust prompt.
+- **Testing instructions:** open `/demo`, use the primary prompt above, then the trust prompt.
 
 ## Final submission freeze checklist
 
-- [ ] Permanent HTTPS live site opens without local dependencies.
-- [ ] Native WebMCP browser discovers the expected four pre-approval tools.
-- [ ] Primary prompt produces compare → preview → human stop behavior.
-- [ ] Human approval exposes the fifth apply capability.
-- [ ] Applying the plan returns to four active tools and leaves the R2 receipt.
-- [ ] Human-lock prompt fails closed.
-- [ ] All seven natural-language eval cases have been run against the deployed site.
-- [ ] Final visual review passes on the deployed frontend.
-- [ ] Repository is public and the open-source license is visible/detectable.
+- [x] Permanent HTTPS live site opens without local dependencies.
+- [x] Native WebMCP browser discovers the expected four pre-approval tools.
+- [x] Primary natural-language prompt produces compare → preview → human stop behavior on the deployed site.
+- [x] Human approval exposes the fifth apply capability on the deployed site.
+- [x] Applying the plan returns to four active tools and leaves the R2 receipt on the deployed site.
+- [x] Native locked-opening request fails closed on the deployed site: Q014 blocks both strategies and no unlock tool is exposed.
+- [x] All seven natural-language eval cases have been run against the deployed site.
+- [x] Final visual review passes on the deployed desktop frontend; narrow widths pass the production Chromium suite.
+- [x] Repository is public and the open-source license is visible/detectable.
 - [ ] Public YouTube demo is under three minutes and includes audio explaining WebMCP usage.
-- [ ] Devpost description uses the four required explanation points above.
+- [x] Devpost description covers the four required explanation points above.
 - [ ] After the submission deadline, the submitted repo, live site, and Devpost entry remain unchanged throughout judging.

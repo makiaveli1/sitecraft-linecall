@@ -120,7 +120,7 @@ This was corrected so that:
 Latest registered PC Bridge `verify` workflow:
 
 - status: **passed**;
-- tests: **29/29 passed**;
+- tests: **30/30 passed**;
 - failures: **0**;
 - skips: **0**;
 - real Chromium production-build rendering and interaction test: **passed**;
@@ -130,9 +130,9 @@ Latest registered PC Bridge `verify` workflow:
 - WebMCP agent-eval contract tests: **passed**;
 - exact project state remained stable for the full verification run.
 
-The production Vite build also passes.
+The production Vite build also passes. The current permanent HTTPS deployment is [grassy-lotus-7dr8.here.now](https://grassy-lotus-7dr8.here.now/), published from source commit `5b94e29bc229f56f9abcf1376d7d9c515db2a993`; the public `main` branch records that deployment at `c1e59b02db1bc890bbf36e62469c80b545fdf1b6`.
 
-Important evidence boundary: the automated runtime test proves our `registerTool`/`getTools` integration logic against a controlled browser-model-context stub, and the Chromium suite proves the real production UI in Chrome. A separate attended run in a WebMCP-enabled browser is still required before claiming end-to-end live WebMCP agent proof.
+Evidence boundary: the automated runtime test proves the `registerTool`/`getTools` integration logic against a controlled browser-model-context stub, and the Chromium suite proves the production UI and full 4 → 5 → 4 approval lifecycle. Across attended checks on 2026-08-31 and 2026-09-01, ChatGPT's WebMCP-capable in-app browser also discovered the normal-session tools on the permanent origin, successfully executed snapshot, comparison, exact preview, and the locked-opening refusal. On 2026-09-01, the permanent origin completed the attended native 4 → 5 → 4 lifecycle: four tools at R1; human approval of exact plan `retime-r1-qa-p2-ripple_after`; five tools including `linecall_apply_approved_retime`; one exact WebMCP apply; then R2, a visible 13-cue receipt, Q020 at `00:24`, Q032 at `00:47`, no active approval or conflicts, and four tools again. This proves the direct native capability lifecycle. On 2026-09-02, a compatible-agent replay then ran all seven declared prompts from `evals/webmcp-agent-cases.json` against the same permanent `/demo`. All seven exact call traces and arguments matched: direct inspection; compare → safe ripple preview → human stop; one exact approved-plan apply; locked-opening refusal; no unlock capability; cue-readiness update; and no LINECALL tool for the unrelated weather prompt. The replay ended at R2 with the visible 13-cue receipt, Q020 at `00:24`, Q024 ready at `00:34`, Q032 at `00:47`, no active approval or conflicts, four tools, and no apply capability.
 
 ## Demo path
 
@@ -162,10 +162,8 @@ This demonstrates that the agent is not merely operating the interface. It is co
 
 Highest priority:
 
-1. Deploy the freshly verified default `main` production `dist/` to a permanent HTTPS site and confirm WebMCP discovery on that exact deployment. `main` now contains the verified challenge release while `webmcp-challenge` remains as an explicit provenance branch from the pre-challenge baseline.
-2. Run the deployed app in ChatGPT's WebMCP-capable in-app browser or Chrome 149+ with WebMCP enabled and capture genuine tool discovery + execution evidence, including the 4 -> 5 -> 4 approval-gated capability lifecycle.
-3. Run the seven natural-language eval prompts through the Model Context Tool Inspector / compatible agent and record observed call sequences, failures, and prompt/tool-description refinements.
-4. Perform a final attended visual review of the deployed frontend and fix only issues supported by fresh evidence.
-5. Finalize submission copy and a public YouTube demo under three minutes.
+1. Record and publish the public YouTube demo with audio in under three minutes, following the submission storyboard and the now-proven native 4 → 5 → 4 path.
+2. Recheck the final public repository, permanent live URL, license visibility, and Devpost fields immediately before submission.
+3. Freeze the submitted repo, site, and Devpost entry after the deadline for the judging period.
 
-Do not claim the challenge goal complete until live WebMCP execution, public provenance, deployment, and submission assets are verified.
+Do not claim the challenge submission complete until the public video, final repository checks, and Devpost submission are verified.
